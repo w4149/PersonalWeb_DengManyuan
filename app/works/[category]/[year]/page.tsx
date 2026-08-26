@@ -5,6 +5,7 @@ import { JustifiedGallery, GalleryItem } from "@/components/justified-gallery";
 import {
   getCategory,
   getWorksByYear,
+  getLayoutForYear,
   workCategories,
 } from "@/lib/works-data";
 
@@ -59,8 +60,11 @@ export default async function WorkCategoryYearPage({
       src: work.thumbnail,
       aspectRatio: work.aspectRatio,
       title: work.title,
+      displayTitle: work.displayTitle || work.title,
       href: `/works/${category.slug}/${year}/${work.slug}`,
     })) || [];
+
+  const layout = getLayoutForYear(category.slug, year);
 
   return (
     <main className="min-h-screen bg-white">
@@ -87,9 +91,11 @@ export default async function WorkCategoryYearPage({
         {works && works.length > 0 ? (
           <JustifiedGallery
             items={galleryItems}
+            layout={layout}
             columns={{ base: 1, sm: 2, lg: 3 }}
             minHeight={120}
             maxHeight={360}
+            showTitle
           />
         ) : (
           <div className="border-t border-gray-200 pt-12">

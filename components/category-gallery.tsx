@@ -3,12 +3,16 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import type { WorkCategory } from "@/lib/works-data";
+import { GAP } from "@/lib/gallery-config";
 
 type Props = {
   categories: WorkCategory[];
+  gap?: number;
 };
 
-export function CategoryGallery({ categories }: Props) {
+const SIDEBAR_WIDTH = 120;
+
+export function CategoryGallery({ categories, gap = GAP }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -42,41 +46,58 @@ export function CategoryGallery({ categories }: Props) {
 
     for (let i = 0; i < categories.length; i += perRow) {
       const rowCats = categories.slice(i, i + perRow);
-      const sumAR = rowCats.reduce((s, c) => s + c.coverAspectRatio, 0);
-      let height = containerWidth / sumAR;
-      height = Math.max(180, Math.min(420, height));
-      result.push({ cats: rowCats, height });
+
+      if (isMobile) {
+        result.push({ cats: rowCats, height: 0 });
+      } else {
+        const n = rowCats.length;
+        const totalGap = (n - 1) * gap;
+        const sumAR = rowCats.reduce((s, c) => s + c.coverAspectRatio, 0);
+        let height = (containerWidth - totalGap - n * SIDEBAR_WIDTH) / sumAR;
+        height = Math.max(180, Math.min(420, height));
+        result.push({ cats: rowCats, height });
+      }
     }
     return result;
-  }, [categories, perRow, containerWidth]);
+  }, [categories, perRow, containerWidth, gap, isMobile]);
 
   if (categories.length === 0) return null;
 
   return (
-    <div ref={containerRef} className="flex flex-col" style={{ rowGap: "3rem" }}>
+    <div
+      ref={containerRef}
+      className="flex flex-col"
+      style={{ rowGap: isMobile ? gap * 2 : gap }}
+    >
       {rows.map((row, rowIdx) => (
         <div
           key={rowIdx}
-          className="flex justify-between"
-          style={{ height: row.height }}
+          className={`flex justify-between ${isMobile ? "flex-col" : ""}`}
+          style={isMobile ? {} : { height: row.height }}
         >
           {row.cats.map((category) => {
-            const imgWidth = category.coverAspectRatio * row.height;
-            const minBlockWidth = isMobile ? "100%" : `${imgWidth + 120}px`;
+            const imgWidth = isMobile ? 0 : category.coverAspectRatio * row.height;
             return (
               <div
                 key={category.slug}
-                className="flex"
-                style={{
-                  height: row.height,
-                  width: isMobile ? "100%" : undefined,
-                  minWidth: isMobile ? undefined : minBlockWidth,
-                }}
+                className={`flex justify-between shrink-0 ${isMobile ? "flex-col w-full" : ""}`}
+                style={
+                  isMobile
+                    ? {}
+                    : {
+                        height: row.height,
+                        width: imgWidth + SIDEBAR_WIDTH,
+                      }
+                }
               >
                 <Link
                   href={`/works/${category.slug}/${category.years[0]}`}
                   className="relative group/item shrink-0"
-                  style={{ height: row.height, width: imgWidth }}
+                  style={
+                    isMobile
+                      ? { width: "100%" }
+                      : { height: row.height, width: imgWidth }
+                  }
                 >
                   <img
                     src={category.coverImage}
@@ -91,9 +112,11 @@ export function CategoryGallery({ categories }: Props) {
 
                 <div
                   className={`flex flex-col justify-center gap-2 sm:gap-3 ${
-                    isMobile ? "flex-row justify-start mt-3" : "ml-6 shrink-0"
+                    isMobile
+                      ? "flex-row justify-start mt-3"
+                      : "ml-6 shrink-0"
                   }`}
-                  style={isMobile ? {} : { minWidth: "100px" }}
+                  style={isMobile ? {} : { minWidth: `${SIDEBAR_WIDTH}px` }}
                 >
                   {category.years.map((year) => (
                     <Link
