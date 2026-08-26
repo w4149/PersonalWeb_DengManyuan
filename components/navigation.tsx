@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
@@ -18,22 +18,31 @@ export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
 
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
   return (
     <>
-      {/* Mobile menu button - fixed position */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-6 right-6 z-50 p-2 rounded-full border border-gray-300 bg-white/80 backdrop-blur-sm hover:bg-white transition-colors"
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 rounded-full border border-gray-300 bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-sm"
         aria-label="Toggle menu"
       >
         {isOpen ? (
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5 sm:w-6 sm:h-6" />
         ) : (
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
         )}
       </button>
 
-      {/* Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/20 z-40"
@@ -41,14 +50,13 @@ export function Navigation() {
         />
       )}
 
-      {/* Slide-in menu */}
       <nav
         className={cn(
-          "fixed top-0 right-0 h-full w-64 bg-white shadow-xl z-40 transform transition-transform duration-300 ease-in-out",
+          "fixed top-0 right-0 h-full w-full sm:w-64 bg-white shadow-xl z-40 transform transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="pt-20 px-6">
+        <div className="pt-20 sm:pt-20 px-6">
           <ul className="space-y-1">
             {navItems.map((item) => {
               const isActive =
@@ -62,7 +70,7 @@ export function Navigation() {
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 py-3 px-4 rounded-lg transition-colors text-sm font-medium tracking-wide",
+                      "flex items-center gap-3 py-3 px-4 rounded-lg transition-colors text-base sm:text-sm font-medium tracking-wide",
                       isActive
                         ? "bg-amber-50 text-amber-700"
                         : "text-gray-700 hover:bg-gray-50"
@@ -70,7 +78,7 @@ export function Navigation() {
                   >
                     <span
                       className={cn(
-                        "w-2 h-2 rounded-full bg-gray-300",
+                        "w-2 h-2 rounded-full bg-gray-300 shrink-0",
                         isActive && "bg-amber-500"
                       )}
                     />

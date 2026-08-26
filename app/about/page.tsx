@@ -11,15 +11,13 @@ export default function AboutPage() {
     <main className="min-h-screen bg-white">
       <Navigation />
 
-      <div className="max-w-5xl mx-auto px-8 md:px-16 lg:px-24 py-16 md:py-24">
-        {/* Page Title */}
-        <h1 className="text-6xl md:text-7xl lg:text-8xl font-serif italic text-gray-900 mb-16">
+      <div className="max-w-5xl mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-16 md:py-24">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-serif italic text-gray-900 mb-12 md:mb-16">
           ABOUT
         </h1>
 
-        {/* Bio Section */}
-        <section className="mb-16">
-          <p className="text-lg md:text-xl leading-relaxed text-gray-800 mb-6">
+        <section className="mb-12 md:mb-16">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-800 mb-4 md:mb-6">
             As an artist-researcher, Deng Manyuan graduated with a Master&apos;s
             degree in Fine Arts from Sichuan University in 2025. She explores an
             artistic methodology of{" "}
@@ -30,12 +28,12 @@ export default function AboutPage() {
             reinterpretation of Chinese Shan Shui aesthetics.
           </p>
 
-          <p className="text-base md:text-lg leading-relaxed text-gray-600 italic mb-8">
+          <p className="text-sm sm:text-base md:text-lg leading-relaxed text-gray-600 italic mb-6 md:mb-8">
             (note: Shan Shui, retained in its Chinese form, refers to a
             relational worldview rather than simply Chinese landscape painting.)
           </p>
 
-          <p className="text-lg md:text-xl leading-relaxed text-gray-800">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-800">
             Through{" "}
             <strong className="font-semibold text-amber-700">
               walking, observation, collecting, photography, painting, and
@@ -48,9 +46,8 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Memory-Shan Shui Concept */}
-        <section className="mb-16">
-          <p className="text-lg md:text-xl leading-relaxed text-gray-800 mb-6">
+        <section className="mb-12 md:mb-16">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-800 mb-4 md:mb-6">
             <strong className="font-semibold text-amber-700">
               Memory-Shan Shui
             </strong>{" "}
@@ -67,7 +64,7 @@ export default function AboutPage() {
             relationships are continuously reorganized and reimagined.
           </p>
 
-          <p className="text-lg md:text-xl leading-relaxed text-gray-800">
+          <p className="text-base sm:text-lg md:text-xl leading-relaxed text-gray-800">
             In terms of visual language, her paintings incorporate traditional
             Chinese visual imagery into contemporary ecological and
             anthropological contexts. Figures and animals often appear as{" "}
@@ -89,15 +86,13 @@ export default function AboutPage() {
           </p>
         </section>
 
-        {/* Two Column Layout: Exhibitions & Residencies */}
-        <section className="grid md:grid-cols-2 gap-12 md:gap-16 mb-16">
-          {/* Exhibitions */}
+        <section className="grid md:grid-cols-2 gap-10 md:gap-16 mb-12 md:mb-16">
           <div>
-            <h2 className="text-3xl md:text-4xl font-serif text-gray-900 mb-8">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-gray-900 mb-6 md:mb-8">
               Exhibitions
             </h2>
 
-            <div className="space-y-8">
+            <div className="space-y-6 md:space-y-8">
               <ExhibitionItem
                 period="2026.4 - 2026.5"
                 title="the Ritual of Daily Life"
@@ -124,15 +119,13 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Artist Residencies & Work Experience */}
-          <div className="space-y-16">
-            {/* Residencies */}
+          <div className="space-y-12 md:space-y-16">
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif text-gray-900 mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-gray-900 mb-6 md:mb-8">
                 Artist Residencies
               </h2>
 
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 <ResidencyItem
                   period="2026.4"
                   title="Xizaotang Young Artists' Art Residency, Weishan"
@@ -148,13 +141,12 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* Work Experience */}
             <div>
-              <h2 className="text-3xl md:text-4xl font-serif text-gray-900 mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-gray-900 mb-6 md:mb-8">
                 Work Experience
               </h2>
 
-              <div className="space-y-8">
+              <div className="space-y-6 md:space-y-8">
                 <WorkExperienceItem
                   period="2025.3 - 2025.9"
                   title="Curator & Researcher"
@@ -186,7 +178,7 @@ function ExhibitionItem({
   return (
     <div>
       <p className="text-sm text-gray-500 mb-1">{period}</p>
-      <h3 className="text-lg font-medium italic text-gray-900 mb-1">
+      <h3 className="text-base sm:text-lg font-medium italic text-gray-900 mb-1">
         {title}
       </h3>
       <p className="text-sm text-gray-600">{type}</p>
@@ -204,7 +196,7 @@ function ResidencyItem({
   return (
     <div>
       <p className="text-sm text-gray-500 mb-1">{period}</p>
-      <h3 className="text-base font-medium italic text-gray-900">{title}</h3>
+      <h3 className="text-sm sm:text-base font-medium italic text-gray-900">{title}</h3>
     </div>
   );
 }
@@ -221,7 +213,7 @@ function WorkExperienceItem({
   return (
     <div>
       <p className="text-sm text-gray-500 mb-1">{period}</p>
-      <h3 className="text-base font-medium italic text-gray-900 mb-1">
+      <h3 className="text-sm sm:text-base font-medium italic text-gray-900 mb-1">
         {title}
       </h3>
       <p className="text-sm text-gray-600">{place}</p>
