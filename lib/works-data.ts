@@ -13,44 +13,124 @@ export type WorkCategory = {
   worksByYear?: Record<number, Work[]>;
 };
 
+const BLANK = "/images/blank.svg";
+
 export const workCategories: WorkCategory[] = [
   {
     slug: "paintings",
     title: "Paitings",
-    coverImage:
-      "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=contemporary%20Chinese%20ink%20and%20color%20painting%2C%20abstract%20landscape%20with%20vibrant%20purple%20and%20turquoise%20swirling%20patterns%2C%20artistic%2C%20museum%20quality%2C%20detail%20visible%2C%20rich%20textures&image_size=landscape_4_3",
+    coverImage: "/images/1.paitings-2026/Tree Pulse.jpg",
     years: [2026, 2025, 2024],
     worksByYear: {
       2026: [
         {
           slug: "tree-pulse",
           title: "Tree Pulse",
-          thumbnail:
-            "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=abstract%20painting%20on%20rice%20paper%2C%20swirling%20purple%20and%20turquoise%20colors%2C%20flowing%20energy%20patterns%2C%20contemporary%20Chinese%20ink%20art%2C%20square%20format%2C%20gallery%20photography&image_size=square",
+          thumbnail: "/images/1.paitings-2026/Tree Pulse.jpg",
         },
         {
           slug: "world-tree",
           title: "World Tree",
-          thumbnail:
-            "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=dark%20mystical%20painting%20of%20a%20tree%20of%20life%2C%20twisted%20branches%20reaching%20skyward%2C%20small%20bird%20on%20branch%2C%20ink%20and%20color%20on%20paper%2C%20contemporary%20Chinese%20art%2C%20square%20format&image_size=square",
+          thumbnail: "/images/1.paitings-2026/Word Tree.jpg",
         },
         {
           slug: "becoming-mountain",
           title: "Becoming Mountain",
-          thumbnail:
-            "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=contemplative%20figure%20seated%20on%20rocky%20mountain%2C%20meditative%20painting%2C%20earthy%20tones%20with%20subtle%20gold%20accents%2C%20Chinese%20ink%20on%20paper%2C%20spiritual%20art%2C%20square%20format&image_size=square",
+          thumbnail: "/images/1.paitings-2026/Becoming Mountain.jpg",
         },
         {
           slug: "worlding",
           title: "Worlding",
-          thumbnail:
-            "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=abstract%20landscape%20painting%2C%20intricate%20blue%20and%20purple%20linework%20creating%20worlds%2C%20cosmic%20patterns%2C%20Chinese%20contemporary%20ink%20art%2C%20square%20format%2C%20detailed&image_size=square",
+          thumbnail: "/images/1.paitings-2026/Worlding.jpg",
         },
         {
-          slug: "mountain-of-spirits",
+          slug: "the-mountain-of-spirits",
           title: "The Mountain of Spirits",
+          thumbnail: "/images/1.paitings-2026/the mountain of spirits.jpg",
+        },
+      ],
+      2025: [
+        {
+          slug: "a-joke-on-fragmented-shan-shui",
+          title: "A Joke on Fragmented Shan Shui Ⅰ~Ⅹ",
           thumbnail:
-            "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=mystical%20mountain%20landscape%20painting%2C%20layered%20blue%20and%20violet%20mountain%20ridges%2C%20ethereal%20atmosphere%2C%20Chinese%20ink%20and%20color%20on%20paper%2C%20contemporary%2C%20square%20format&image_size=square",
+            "/images/2.paitings-2025/A Joke on Fragmented Shan Shui Ⅰ~Ⅹ/DSC02784.jpg",
+        },
+        {
+          slug: "becoming-human",
+          title: "Becoming Human Ⅰ Ⅱ Ⅲ",
+          thumbnail:
+            "/images/2.paitings-2025/Becoming  Human Ⅰ Ⅱ Ⅲ/主图1.jpg",
+        },
+        {
+          slug: "floating",
+          title: "Floating",
+          thumbnail: "/images/2.paitings-2025/Floating.JPG",
+        },
+        {
+          slug: "maternity-myth",
+          title: "Maternity Myth",
+          thumbnail: "/images/2.paitings-2025/Maternity Myth.png",
+        },
+        {
+          slug: "rock-and-tree-i",
+          title: "Rock and Tree Ⅰ",
+          thumbnail: "/images/2.paitings-2025/Rock and Tree Ⅰ.png",
+        },
+        {
+          slug: "rock-and-tree-ii",
+          title: "Rock and Tree Ⅱ",
+          thumbnail: "/images/2.paitings-2025/Rock and TreeⅡ.png",
+        },
+        {
+          slug: "sinking",
+          title: "Sinking",
+          thumbnail: "/images/2.paitings-2025/Sinking.jpg",
+        },
+        {
+          slug: "tree-spirit",
+          title: "Tree Spirit Ⅰ Ⅱ Ⅲ",
+          thumbnail:
+            "/images/2.paitings-2025/Tree Spirit Ⅰ Ⅱ Ⅲ/总.png",
+        },
+        {
+          slug: "wildmans-paradise",
+          title: "Wildman's Paradise",
+          thumbnail:
+            "/images/2.paitings-2025/Wildman's Paradise.jpg",
+        },
+      ],
+      2024: [
+        {
+          slug: "bapo-shanshui",
+          title: "Bapo Shanshui",
+          thumbnail: "/images/3.paitings-2024/Bapo Shanshui.jpg",
+        },
+        {
+          slug: "collaged-love",
+          title: "Collaged Love",
+          thumbnail: "/images/3.paitings-2024/Collaged Love.png",
+        },
+        {
+          slug: "fragments-of-memory",
+          title: "Fragments of Memory",
+          thumbnail:
+            "/images/3.paitings-2024/Fragments of Memory/拼贴山水长卷.png",
+        },
+        {
+          slug: "non-dualism",
+          title: "Non-Dualism",
+          thumbnail: "/images/3.paitings-2024/Non-Dualism.jpg",
+        },
+        {
+          slug: "sacred-sapling",
+          title: "Sacred Sapling",
+          thumbnail: "/images/3.paitings-2024/Sacred Sapling.jpg",
+        },
+        {
+          slug: "verdant-heaven",
+          title: "Verdant Heaven",
+          thumbnail: "/images/3.paitings-2024/Verdant Heaven.jpg",
         },
       ],
     },
@@ -58,23 +138,104 @@ export const workCategories: WorkCategory[] = [
   {
     slug: "installations",
     title: "Installations",
-    coverImage:
-      "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=large-scale%20installation%20art%2C%20dark%20fabric%20sculpture%20hanging%20in%20white%20gallery%20space%2C%20dramatic%20lighting%2C%20black%20and%20white%20art%2C%20site-specific%2C%20contemporary%20art%20exhibition&image_size=landscape_4_3",
+    coverImage: "/images/4.installations-2026/Weishan Memory Ⅰ/主图.png",
     years: [2026, 2025],
+    worksByYear: {
+      2026: [
+        {
+          slug: "god-of-happiness",
+          title: "God of Happiness",
+          thumbnail:
+            "/images/4.installations-2026/God of  Happiness/主图1.jpg",
+        },
+        {
+          slug: "weishan-memory-i",
+          title: "Weishan Memory Ⅰ",
+          thumbnail:
+            "/images/4.installations-2026/Weishan Memory Ⅰ/主图.png",
+        },
+        {
+          slug: "weishan-memory-ii",
+          title: "Weishan Memory Ⅱ",
+          thumbnail:
+            "/images/4.installations-2026/Weishan Memory Ⅱ/主图.jpg",
+        },
+      ],
+      2025: [
+        {
+          slug: "memory-nearby",
+          title: "Memory Nearby",
+          thumbnail:
+            "/images/5.installations-2025/Memory Nearby/Chengdu version/全.jpg",
+        },
+        {
+          slug: "new-narrative-of-foshan",
+          title: "New Narrative of Foshan",
+          thumbnail:
+            "/images/5.installations-2025/New Narrative of Foshan/主图.png",
+        },
+        {
+          slug: "spirit-dwelling",
+          title: "Spirit Dwelling",
+          thumbnail:
+            "/images/5.installations-2025/Spirit Dwelling/主图.jpg",
+        },
+      ],
+    },
   },
   {
     slug: "workshops",
     title: "Workshops",
     coverImage:
-      "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=community%20art%20workshop%2C%20people%20painting%20together%20at%20wooden%20table%2C%20colorful%20art%20supplies%20and%20brushes%2C%20warm%20natural%20light%2C%20candid%20photography%2C%20inclusive%20creative%20atmosphere&image_size=landscape_4_3",
+      "/images/6.workshops-2026/Weishan Memory Collage Workshop/主图.png",
     years: [2026, 2025],
+    worksByYear: {
+      2026: [
+        {
+          slug: "weishan-memory-collage-workshop",
+          title: "Weishan Memory Collage Workshop",
+          thumbnail:
+            "/images/6.workshops-2026/Weishan Memory Collage Workshop/主图.png",
+        },
+      ],
+      2025: [
+        {
+          slug: "the-memory-ritual-of-leaves-and-trees",
+          title: "The Memory Ritual of Leaves and Trees",
+          thumbnail:
+            "/images/7.workshops-2025/the Memory Ritual of Leaves and Trees/主图.jpg",
+        },
+      ],
+    },
   },
   {
     slug: "photograph-videos",
     title: "Photograph & Videos",
     coverImage:
-      "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=photography%20and%20video%20art%2C%20dramatic%20side%20lighting%2C%20artist%20portrait%20with%20camera%2C%20cinematic%20black%20and%20white%2C%20moody%20atmosphere%2C%20shot%20on%20film&image_size=landscape_4_3",
+      "/images/8.Photograph and videos-2026/Photograph/animism (1).jpg",
     years: [2026],
+    worksByYear: {
+      2026: [
+        {
+          slug: "animism",
+          title: "animism",
+          thumbnail:
+            "/images/8.Photograph and videos-2026/Photograph/animism (1).jpg",
+        },
+        {
+          slug: "a-wedding-within-shan-shui",
+          title: "A Wedding within Shan Shui",
+          thumbnail:
+            "/images/8.Photograph and videos-2026/vedio/A Wedding within Shan Shui-that day, the sum of every moment.png",
+        },
+        {
+          slug: "embodied-memories-of-weishan",
+          title: "Embodied Memories of Weishan",
+          thumbnail:
+            "/images/8.Photograph and videos-2026/vedio/Embodied Memories of Weishan.jpg",
+        },
+      ],
+    },
   },
 ];
 
@@ -100,3 +261,5 @@ export function getWork(
   if (!works) return undefined;
   return works.find((w) => w.slug === workSlug);
 }
+
+export { BLANK };

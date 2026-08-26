@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "node scripts/prepare-images.mjs",
+    "prepare-images": "node scripts/prepare-images.mjs"
   },
   "dependencies": {
     "next": "15.2.8",
