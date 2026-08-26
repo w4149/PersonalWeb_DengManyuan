@@ -5,6 +5,11 @@ export type Work = {
   thumbnail: string;
   aspectRatio: number;
   description?: string;
+  materials?: string;
+  layout?: "left" | "center" | "wide" | "partial" | "right" | "bottom" | "wideBottom" | "grid";
+  imgWidthRatio?: number;
+  link?: string;
+  images?: { src: string; alt?: string }[];
 };
 
 export type WorkCategory = {
@@ -41,6 +46,10 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Tree Pulse",
           thumbnail: `${R2}/images/paintings-2026/tree-pulse.jpg`,
           aspectRatio: 0.7908,
+          materials: "acrylic painting on paper, 27×35cm, 2026",
+          layout: "left",
+          description:
+            "This work depicts the internal structure of a tree, focusing on its growth, and energy flow. Moving beyond external morphology, the painting seeks to enter the tree's inner vital processes, exploring the possibility of shared embodiment—a mutual life rhythm between humans and trees.",
         },
         {
           slug: "world-tree",
@@ -48,6 +57,10 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "World Tree",
           thumbnail: `${R2}/images/paintings-2026/world-tree.jpg`,
           aspectRatio: 0.5771,
+          materials: "acrylic painting on canvas, 60×100cm, 2026",
+          layout: "center",
+          description:
+            "The World Tree stands as a cosmic axis connecting heaven and earth, its branches reaching into the spiritual realm while its roots grip the material world. Birds nest in its crown, symbolizing the communion between the mortal and the divine—a living bridge between worlds.",
         },
         {
           slug: "becoming-mountain",
@@ -55,6 +68,10 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Becoming Mountain",
           thumbnail: `${R2}/images/paintings-2026/becoming-mountain.jpg`,
           aspectRatio: 0.6371,
+          materials: "Chinese pigment, pencil on paper, 43×76cm, 2026",
+          layout: "left",
+          description:
+            "Through this work, Memory-Shan Shui evolves into a practice of shared embodiment. The mountain becomes Buddha, and Buddha becomes the mountain. Humans exist within this continuous transformation, sharing sensations of suffering and memories with all forms of being.",
         },
         {
           slug: "worlding",
@@ -62,6 +79,10 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Worlding",
           thumbnail: `${R2}/images/paintings-2026/worlding.jpg`,
           aspectRatio: 1.8887,
+          materials: "Chinese pigment on paper, 68×33.5cm, 2026",
+          layout: "wide",
+          description:
+            "Integrating explorations of the body, forest, mythology, and Shan Shui, the work brings diverse forms of life into a continuously emerging relational space. Gods, humans, and landscapes are no longer separate entities but mutually permeating forms of existence, challenging the conventional boundary between subject and object.",
         },
         {
           slug: "the-mountain-of-spirits",
@@ -69,6 +90,8 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "The Mountain of Spirits",
           thumbnail: `${R2}/images/paintings-2026/the-mountain-of-spirits.jpg`,
           aspectRatio: 1.3517,
+          layout: "partial",
+          imgWidthRatio: 0.75,
         },
       ],
       2025: [
@@ -94,6 +117,8 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Floating",
           thumbnail: "/images/paintings-2025/floating.jpg",
           aspectRatio: 0.692,
+          layout: "left",
+          materials: "acrylic paint, pencil and crayon on paper, 21 x 30 cm, 2025",
         },
         {
           slug: "maternity-myth",
@@ -101,6 +126,11 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Maternity Myth",
           thumbnail: "/images/paintings-2025/maternity-myth.png",
           aspectRatio: 1.2081,
+          layout: "partial",
+          imgWidthRatio: 0.75,
+          materials: "oil painting on wood panel, 50 x 60 cm, 2025",
+          description:
+            "During my residency in Foshan, I conducted research on local myths and legends and learned about a distinctive female deity tradition in the Xijiang River basin of Guangdong—the worship of the Dragon Mother. Within this belief system, the Dragon Mother is regarded as the sovereign of the waters and a goddess of fertility and protection, embodying a dual role as both a maternal deity and a local guardian spirit. What moved me most was the story of the Dragon Mother originally being a mortal woman who accidentally found a dragon egg and hatched five baby dragons with her own hands. In this work, I imaginatively reconstruct this specific memory to highlight the water-spirit qualities and vital force embodied in her feminine divine power.",
         },
         {
           slug: "rock-and-tree-i",
@@ -108,6 +138,11 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Rock and Tree Ⅰ",
           thumbnail: "/images/paintings-2025/rock-and-tree-ⅰ.png",
           aspectRatio: 1.011,
+          layout: "partial",
+          imgWidthRatio: 0.75,
+          materials: "50 x 50 cm | mulberry paper mounted on wooden panel, Chinese pigments, ink, silver leaf | 2025",
+          description:
+            "The work centres on the \"rocks\" and \"trees\" of traditional Shan Shui, reinterpreting Taihu rocks and trees as symbols of personal lived experience. Rocks become metaphors for the body and identity, while trees intertwine, grow, and evolve with inner experience to form a continuously changing living system. The work further explores how natural elements in Shan Shui can act as mediators between humans and the world, developing artistic approaches to co-generating relationships with more-than-human beings.",
         },
         {
           slug: "rock-and-tree-ii",
@@ -115,6 +150,8 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Rock and Tree Ⅱ",
           thumbnail: "/images/paintings-2025/rock-and-tree-ⅱ.png",
           aspectRatio: 1.0044,
+          layout: "partial",
+          imgWidthRatio: 0.75,
         },
         {
           slug: "sinking",
@@ -122,6 +159,8 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Sinking",
           thumbnail: "/images/paintings-2025/sinking.jpg",
           aspectRatio: 1.2281,
+          layout: "wideBottom",
+          materials: "quartz sand, acrylic, ink, chalk, gauze, ballpoint pen, plaster mixed media on oil canvas, 40 x 60 cm, 2025",
         },
         {
           slug: "tree-spirit",
@@ -138,6 +177,10 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             "/images/paintings-2025/wildmans-paradise.jpg",
           aspectRatio: 0.7874,
+          layout: "right",
+          materials: "lacquer, ink, traditional Chinese pigments mixed media on paper, 50 x 60 cm, 2025",
+          description:
+            "Through the tension between \"wildness\" and \"discipline,\" the work reexamines individual identity at the threshold between nature and society. The figure of the \"wild man\" operates simultaneously as a social identity and as a metaphor for the restoration of a connection between human beings and the natural world.",
         },
       ],
       2024: [
@@ -291,6 +334,9 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             "/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/main.jpg",
           aspectRatio: 1.7768,
+          layout: "left",
+          description:
+            "During the Huzhou residency, I invited participants to collect naturally fallen leaves and transform these materials through handcraft into objects such as accessories and bookmarks. The workshop focused on processes of gathering, sensing, and making, exploring how humans and trees can establish a corresponding relationship through material engagement.",
         },
       ],
     },
@@ -314,6 +360,11 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             "/images/photograph-videos-2026/video/a-wedding-within-shan-shui.png",
           aspectRatio: 2.1884,
+          layout: "wide",
+          materials: "video | size variable | 2026",
+          description:
+            "From a first-person perspective, I documented weddings within the rural mountain landscapes of Yunnan. The work reconstructs memories through fragmented images, moments of absence, voice-over narration, and Yi ethnic folk songs. The filmmaker remains a bodily participant within the image, allowing the moving image to become a process through which memories are co-generated by people and place, rather than an objective record. The work explores how moving images can function as a method of Memory-Shan Shui, understanding memory as an ongoing practice of correspondence between humans and their environments.",
+          link: "https://youtu.be/uJXzXT_XhTk",
         },
         {
           slug: "embodied-memories-of-weishan",
@@ -322,6 +373,11 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             "/images/photograph-videos-2026/video/embodied-memories-of-weishan.jpg",
           aspectRatio: 1.7787,
+          layout: "partial",
+          materials: "video | size variable | 2026",
+          description:
+            "Using their own memory collage works as a medium, participants continuously reconfigured local memories through bodily actions in a projection theatre at night. Rather than attempting to represent Weishan, the work allows experiences of place to continuously emerge through collective performance. It explores Memory-Shan Shui as a method of shared embodied perception.",
+          link: "https://youtu.be/MHIlvJIKeMI?is=iFzXhB4n7UK8lYqW",
         },
         {
           slug: "animism",
@@ -330,6 +386,13 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             "/images/photograph-videos-2026/photograph/animism-1.jpg",
           aspectRatio: 1.7778,
+          layout: "grid",
+          description:
+            "This series was photographed in Tibet. Through my encounters with the ancient Himalayan landscape, I sensed a profound animistic presence embedded within the relationship between humans and the natural world. Mountains, rocks, animals, water, and other forms of existence appeared not as separate entities, but as interconnected beings sharing a living continuum.",
+          images: Array.from({ length: 24 }, (_, i) => ({
+            src: `/images/photograph-videos-2026/photograph/animism-${i + 1}.jpg`,
+            alt: `Animism ${i + 1}`,
+          })),
         },
       ],
     },
