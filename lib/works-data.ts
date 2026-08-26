@@ -2,6 +2,7 @@ export type Work = {
   slug: string;
   title: string;
   thumbnail: string;
+  aspectRatio: number;
   description?: string;
 };
 
@@ -9,44 +10,53 @@ export type WorkCategory = {
   slug: string;
   title: string;
   coverImage: string;
+  coverAspectRatio: number;
   years: number[];
   worksByYear?: Record<number, Work[]>;
 };
 
 const BLANK = "/images/blank.svg";
 
+const R2 = "https://pub-0152450371c44ecb87bb433ea94e2039.r2.dev";
+
 export const workCategories: WorkCategory[] = [
   {
     slug: "paintings",
-    title: "Paitings",
-    coverImage: "/images/1.paitings-2026/Tree Pulse.jpg",
+    title: "Paintings",
+    coverImage: `${R2}/images/paintings-2026/world-tree.jpg`,
+    coverAspectRatio: 0.5771,
     years: [2026, 2025, 2024],
     worksByYear: {
       2026: [
         {
           slug: "tree-pulse",
           title: "Tree Pulse",
-          thumbnail: "/images/1.paitings-2026/Tree Pulse.jpg",
+          thumbnail: `${R2}/images/paintings-2026/tree-pulse.jpg`,
+          aspectRatio: 0.7908,
         },
         {
           slug: "world-tree",
           title: "World Tree",
-          thumbnail: "/images/1.paitings-2026/Word Tree.jpg",
+          thumbnail: `${R2}/images/paintings-2026/world-tree.jpg`,
+          aspectRatio: 0.5771,
         },
         {
           slug: "becoming-mountain",
           title: "Becoming Mountain",
-          thumbnail: "/images/1.paitings-2026/Becoming Mountain.jpg",
+          thumbnail: `${R2}/images/paintings-2026/becoming-mountain.jpg`,
+          aspectRatio: 0.6371,
         },
         {
           slug: "worlding",
           title: "Worlding",
-          thumbnail: "/images/1.paitings-2026/Worlding.jpg",
+          thumbnail: `${R2}/images/paintings-2026/worlding.jpg`,
+          aspectRatio: 1.8887,
         },
         {
           slug: "the-mountain-of-spirits",
           title: "The Mountain of Spirits",
-          thumbnail: "/images/1.paitings-2026/the mountain of spirits.jpg",
+          thumbnail: `${R2}/images/paintings-2026/the-mountain-of-spirits.jpg`,
+          aspectRatio: 1.3517,
         },
       ],
       2025: [
@@ -54,83 +64,98 @@ export const workCategories: WorkCategory[] = [
           slug: "a-joke-on-fragmented-shan-shui",
           title: "A Joke on Fragmented Shan Shui Ⅰ~Ⅹ",
           thumbnail:
-            "/images/2.paitings-2025/A Joke on Fragmented Shan Shui Ⅰ~Ⅹ/DSC02784.jpg",
+            "/images/paintings-2025/a-joke-on-fragmented-shan-shui/dsc02784.jpg",
+          aspectRatio: 1.0336,
         },
         {
           slug: "becoming-human",
           title: "Becoming Human Ⅰ Ⅱ Ⅲ",
           thumbnail:
-            "/images/2.paitings-2025/Becoming  Human Ⅰ Ⅱ Ⅲ/主图1.jpg",
+            "/images/paintings-2025/becoming-human/contact-sheet-1.jpg",
+          aspectRatio: 1.1756,
         },
         {
           slug: "floating",
           title: "Floating",
-          thumbnail: "/images/2.paitings-2025/Floating.JPG",
+          thumbnail: "/images/paintings-2025/floating.jpg",
+          aspectRatio: 0.692,
         },
         {
           slug: "maternity-myth",
           title: "Maternity Myth",
-          thumbnail: "/images/2.paitings-2025/Maternity Myth.png",
+          thumbnail: "/images/paintings-2025/maternity-myth.png",
+          aspectRatio: 1.2081,
         },
         {
           slug: "rock-and-tree-i",
           title: "Rock and Tree Ⅰ",
-          thumbnail: "/images/2.paitings-2025/Rock and Tree Ⅰ.png",
+          thumbnail: "/images/paintings-2025/rock-and-tree-ⅰ.png",
+          aspectRatio: 1.011,
         },
         {
           slug: "rock-and-tree-ii",
           title: "Rock and Tree Ⅱ",
-          thumbnail: "/images/2.paitings-2025/Rock and TreeⅡ.png",
+          thumbnail: "/images/paintings-2025/rock-and-tree-ⅱ.png",
+          aspectRatio: 1.0044,
         },
         {
           slug: "sinking",
           title: "Sinking",
-          thumbnail: "/images/2.paitings-2025/Sinking.jpg",
+          thumbnail: "/images/paintings-2025/sinking.jpg",
+          aspectRatio: 1.2281,
         },
         {
           slug: "tree-spirit",
           title: "Tree Spirit Ⅰ Ⅱ Ⅲ",
           thumbnail:
-            "/images/2.paitings-2025/Tree Spirit Ⅰ Ⅱ Ⅲ/总.png",
+            "/images/paintings-2025/tree-spirit/collected.png",
+          aspectRatio: 1.1099,
         },
         {
           slug: "wildmans-paradise",
           title: "Wildman's Paradise",
           thumbnail:
-            "/images/2.paitings-2025/Wildman's Paradise.jpg",
+            "/images/paintings-2025/wildmans-paradise.jpg",
+          aspectRatio: 0.7874,
         },
       ],
       2024: [
         {
           slug: "bapo-shanshui",
           title: "Bapo Shanshui",
-          thumbnail: "/images/3.paitings-2024/Bapo Shanshui.jpg",
+          thumbnail: "/images/paintings-2024/bapo-shanshui.jpg",
+          aspectRatio: 1.3552,
         },
         {
           slug: "collaged-love",
           title: "Collaged Love",
-          thumbnail: "/images/3.paitings-2024/Collaged Love.png",
+          thumbnail: "/images/paintings-2024/collaged-love.png",
+          aspectRatio: 1.3862,
         },
         {
           slug: "fragments-of-memory",
           title: "Fragments of Memory",
           thumbnail:
-            "/images/3.paitings-2024/Fragments of Memory/拼贴山水长卷.png",
+            "/images/paintings-2024/fragments-of-memory/collaged-landscape-scroll.png",
+          aspectRatio: 12.1744,
         },
         {
           slug: "non-dualism",
           title: "Non-Dualism",
-          thumbnail: "/images/3.paitings-2024/Non-Dualism.jpg",
+          thumbnail: "/images/paintings-2024/non-dualism.jpg",
+          aspectRatio: 1.5,
         },
         {
           slug: "sacred-sapling",
           title: "Sacred Sapling",
-          thumbnail: "/images/3.paitings-2024/Sacred Sapling.jpg",
+          thumbnail: "/images/paintings-2024/sacred-sapling.jpg",
+          aspectRatio: 0.9865,
         },
         {
           slug: "verdant-heaven",
           title: "Verdant Heaven",
-          thumbnail: "/images/3.paitings-2024/Verdant Heaven.jpg",
+          thumbnail: "/images/paintings-2024/verdant-heaven.jpg",
+          aspectRatio: 0.6975,
         },
       ],
     },
@@ -138,7 +163,9 @@ export const workCategories: WorkCategory[] = [
   {
     slug: "installations",
     title: "Installations",
-    coverImage: "/images/4.installations-2026/Weishan Memory Ⅰ/主图.png",
+    coverImage:
+      "/images/installations-2026/weishan-memory-i/main.png",
+    coverAspectRatio: 1.7769,
     years: [2026, 2025],
     worksByYear: {
       2026: [
@@ -146,19 +173,22 @@ export const workCategories: WorkCategory[] = [
           slug: "god-of-happiness",
           title: "God of Happiness",
           thumbnail:
-            "/images/4.installations-2026/God of  Happiness/主图1.jpg",
+            "/images/installations-2026/god-of-happiness/main-1.jpg",
+          aspectRatio: 1.8293,
         },
         {
           slug: "weishan-memory-i",
           title: "Weishan Memory Ⅰ",
           thumbnail:
-            "/images/4.installations-2026/Weishan Memory Ⅰ/主图.png",
+            "/images/installations-2026/weishan-memory-i/main.png",
+          aspectRatio: 1.7769,
         },
         {
           slug: "weishan-memory-ii",
           title: "Weishan Memory Ⅱ",
           thumbnail:
-            "/images/4.installations-2026/Weishan Memory Ⅱ/主图.jpg",
+            "/images/installations-2026/weishan-memory-ii/detail-1.jpg",
+          aspectRatio: 0.6283,
         },
       ],
       2025: [
@@ -166,19 +196,22 @@ export const workCategories: WorkCategory[] = [
           slug: "memory-nearby",
           title: "Memory Nearby",
           thumbnail:
-            "/images/5.installations-2025/Memory Nearby/Chengdu version/全.jpg",
+            "/images/installations-2025/memory-nearby/chengdu-version/full.jpg",
+          aspectRatio: 1.0,
         },
         {
           slug: "new-narrative-of-foshan",
           title: "New Narrative of Foshan",
           thumbnail:
-            "/images/5.installations-2025/New Narrative of Foshan/主图.png",
+            "/images/installations-2025/new-narrative-of-foshan/main.png",
+          aspectRatio: 1.7769,
         },
         {
           slug: "spirit-dwelling",
           title: "Spirit Dwelling",
           thumbnail:
-            "/images/5.installations-2025/Spirit Dwelling/主图.jpg",
+            "/images/installations-2025/spirit-dwelling/detail-1.jpg",
+          aspectRatio: 0.6035,
         },
       ],
     },
@@ -187,7 +220,8 @@ export const workCategories: WorkCategory[] = [
     slug: "workshops",
     title: "Workshops",
     coverImage:
-      "/images/6.workshops-2026/Weishan Memory Collage Workshop/主图.png",
+      "/images/workshops-2026/weishan-memory-collage-workshop/main.jpg",
+    coverAspectRatio: 1.3654,
     years: [2026, 2025],
     worksByYear: {
       2026: [
@@ -195,7 +229,8 @@ export const workCategories: WorkCategory[] = [
           slug: "weishan-memory-collage-workshop",
           title: "Weishan Memory Collage Workshop",
           thumbnail:
-            "/images/6.workshops-2026/Weishan Memory Collage Workshop/主图.png",
+            "/images/workshops-2026/weishan-memory-collage-workshop/main.jpg",
+          aspectRatio: 1.3654,
         },
       ],
       2025: [
@@ -203,7 +238,8 @@ export const workCategories: WorkCategory[] = [
           slug: "the-memory-ritual-of-leaves-and-trees",
           title: "The Memory Ritual of Leaves and Trees",
           thumbnail:
-            "/images/7.workshops-2025/the Memory Ritual of Leaves and Trees/主图.jpg",
+            "/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/main.jpg",
+          aspectRatio: 1.7768,
         },
       ],
     },
@@ -212,7 +248,8 @@ export const workCategories: WorkCategory[] = [
     slug: "photograph-videos",
     title: "Photograph & Videos",
     coverImage:
-      "/images/8.Photograph and videos-2026/Photograph/animism (1).jpg",
+      "/images/photograph-videos-2026/photograph/animism-1.jpg",
+    coverAspectRatio: 1.7778,
     years: [2026],
     worksByYear: {
       2026: [
@@ -220,19 +257,22 @@ export const workCategories: WorkCategory[] = [
           slug: "animism",
           title: "animism",
           thumbnail:
-            "/images/8.Photograph and videos-2026/Photograph/animism (1).jpg",
+            "/images/photograph-videos-2026/photograph/animism-1.jpg",
+          aspectRatio: 1.7778,
         },
         {
           slug: "a-wedding-within-shan-shui",
           title: "A Wedding within Shan Shui",
           thumbnail:
-            "/images/8.Photograph and videos-2026/vedio/A Wedding within Shan Shui-that day, the sum of every moment.png",
+            "/images/photograph-videos-2026/video/a-wedding-within-shan-shui.png",
+          aspectRatio: 2.1884,
         },
         {
           slug: "embodied-memories-of-weishan",
           title: "Embodied Memories of Weishan",
           thumbnail:
-            "/images/8.Photograph and videos-2026/vedio/Embodied Memories of Weishan.jpg",
+            "/images/photograph-videos-2026/video/embodied-memories-of-weishan.jpg",
+          aspectRatio: 1.7787,
         },
       ],
     },

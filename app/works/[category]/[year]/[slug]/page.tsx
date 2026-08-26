@@ -59,6 +59,9 @@ export default async function WorkDetailPage({
   const nextWork =
     currentIndex < works.length - 1 ? works[currentIndex + 1] : null;
 
+  const aspectRatio = work.aspectRatio;
+  const maxWidth = aspectRatio >= 1.2 ? 900 : aspectRatio <= 0.7 ? 500 : 700;
+
   return (
     <main className="min-h-screen bg-white">
       <Navigation />
@@ -82,12 +85,18 @@ export default async function WorkDetailPage({
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-16">
-          <div className="md:col-span-3">
-            <div className="relative overflow-hidden rounded-sm aspect-square bg-gray-100">
+          <div className="md:col-span-3 flex items-start justify-center">
+            <div
+              className="bg-gray-50 rounded-sm overflow-hidden"
+              style={{
+                width: "100%",
+                maxWidth: `${maxWidth}px`,
+              }}
+            >
               <img
                 src={work.thumbnail}
                 alt={work.title}
-                className="w-full h-full object-cover"
+                className="w-full h-auto object-contain"
               />
             </div>
           </div>

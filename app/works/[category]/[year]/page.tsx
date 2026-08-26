@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navigation } from "@/components/navigation";
+import { JustifiedGallery, GalleryItem } from "@/components/justified-gallery";
 import {
   getCategory,
   getWorksByYear,
@@ -53,6 +54,14 @@ export default async function WorkCategoryYearPage({
   const nextYear =
     yearIndex > 0 ? category.years[yearIndex - 1] : null;
 
+  const galleryItems: GalleryItem[] =
+    works?.map((work) => ({
+      src: work.thumbnail,
+      aspectRatio: work.aspectRatio,
+      title: work.title,
+      href: `/works/${category.slug}/${year}/${work.slug}`,
+    })) || [];
+
   return (
     <main className="min-h-screen bg-white">
       <Navigation />
@@ -76,26 +85,12 @@ export default async function WorkCategoryYearPage({
         </p>
 
         {works && works.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
-            {works.map((work) => (
-              <Link
-                key={work.slug}
-                href={`/works/${category.slug}/${year}/${work.slug}`}
-                className="group"
-              >
-                <div className="relative overflow-hidden rounded-sm aspect-square bg-gray-100">
-                  <img
-                    src={work.thumbnail}
-                    alt={work.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                </div>
-                <h3 className="mt-4 text-base sm:text-lg font-medium text-gray-900 group-hover:text-amber-700 transition-colors underline underline-offset-2 decoration-gray-300 group-hover:decoration-amber-500">
-                  {work.title}
-                </h3>
-              </Link>
-            ))}
-          </div>
+          <JustifiedGallery
+            items={galleryItems}
+            columns={{ base: 1, sm: 2, lg: 3 }}
+            minHeight={120}
+            maxHeight={360}
+          />
         ) : (
           <div className="border-t border-gray-200 pt-12">
             <p className="text-lg text-gray-500 italic">
