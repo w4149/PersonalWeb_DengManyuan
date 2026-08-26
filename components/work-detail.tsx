@@ -15,7 +15,7 @@ const TITLE_FONT =
 const MONO_FONT =
   "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
 
-const IMAGE_HEIGHT = 520;
+const IMAGE_HEIGHT = "80vh";
 const FALLBACK_WIDTH = 187;
 const LEFT_MAX_WIDTH = 420;
 
@@ -163,7 +163,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     return (
       <div ref={outerRef} style={{ textAlign: "left" }}>
         <div style={{ display: "inline-block", textAlign: "left" }}>
-          <div style={{ display: "flex", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", height: "80vh" }}>
             {textPanel}
             {image}
           </div>
@@ -193,7 +193,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     );
 
     return (
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", height: "80vh" }}>
         {textPanel}
         {image}
       </div>
@@ -224,7 +224,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
   );
 
   return (
-    <div style={{ display: "flex", alignItems: "flex-start" }}>
+    <div style={{ display: "flex", alignItems: "flex-start", height: "80vh" }}>
       {image}
       {textPanel}
     </div>
@@ -241,7 +241,7 @@ function WideLayout({
   numStr: string;
 }) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ minHeight: "80vh" }}>
       <div className="w-full">
         <div className="flex justify-between items-start mb-2">
           <h1
@@ -274,7 +274,7 @@ function WideLayout({
           alt={displayTitle}
           link={work.link}
           className="object-contain block w-full"
-          style={{ maxHeight: "calc(100vh - 200px)" }}
+          style={{ maxHeight: "80vh" }}
         />
 
         {work.description && (
@@ -308,7 +308,7 @@ function WideBottomLayout({
   numStr: string;
 }) {
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ minHeight: "80vh" }}>
       <div className="w-full">
         <div className="flex justify-between items-start mb-2">
           <h1
@@ -336,13 +336,13 @@ function WideBottomLayout({
           )}
         </div>
 
-        <div className="flex justify-center items-start" style={{ minHeight: "calc(100vh - 300px)" }}>
+        <div className="flex justify-center items-start" style={{ minHeight: "80vh" }}>
           <ImageWithLink
             src={work.thumbnail}
             alt={displayTitle}
             link={work.link}
             className="object-contain block w-full"
-            style={{ maxHeight: "calc(100vh - 300px)" }}
+            style={{ maxHeight: "80vh" }}
           />
         </div>
 
@@ -382,7 +382,7 @@ function GridLayout({
   const gapY = 12;
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ minHeight: "80vh" }}>
       <div className="w-full">
         <div className="flex justify-between items-start mb-2">
           <h1
@@ -424,7 +424,7 @@ function GridLayout({
               alt={img.alt || `${displayTitle} ${i + 1}`}
               link={work.link}
               className="object-contain block w-full"
-              style={{ maxHeight: "calc(100vh - 300px)" }}
+              style={{ maxHeight: "80vh" }}
             />
           ))}
         </div>
@@ -464,7 +464,7 @@ function PartialLayout({
   const widthPercent = imgWidthRatio ? `${imgWidthRatio * 100}%` : "75%";
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ minHeight: "80vh" }}>
       <div className="w-full">
         <div className="flex justify-between items-start mb-2">
           <h1
@@ -695,7 +695,7 @@ function BottomLayout({
   const widthPercent = imgWidthRatio ? `${imgWidthRatio * 100}%` : "75%";
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" style={{ minHeight: "80vh" }}>
       <div className="w-full">
         <div className="flex justify-between items-start mb-2">
           <h1
@@ -723,7 +723,7 @@ function BottomLayout({
           )}
         </div>
 
-        <div className="flex justify-center items-start" style={{ minHeight: "calc(100vh - 300px)" }}>
+        <div className="flex justify-center items-start" style={{ minHeight: "80vh" }}>
           <ImageWithLink
             src={work.thumbnail}
             alt={displayTitle}
