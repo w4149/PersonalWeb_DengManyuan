@@ -33,7 +33,7 @@ export function Navigation() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 rounded-full border border-gray-300 bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-sm"
+        className="fixed top-4 right-4 sm:top-6 sm:right-6 z-50 p-2 hover:text-gray-700 transition-colors"
         aria-label="Toggle menu"
       >
         {isOpen ? (
