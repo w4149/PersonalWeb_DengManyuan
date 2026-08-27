@@ -72,8 +72,8 @@ export default async function WorkDetailPage({
         <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-16 md:py-24">
           <WorkDetail work={work} index={currentIndex} />
 
-          <div className="mt-16 flex items-center justify-between text-[10px] border-t border-gray-200 pt-8">
-            <div className="flex gap-4">
+          <div className="mt-16 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[10px] border-t border-gray-200 pt-8 gap-6">
+            <div className="flex flex-wrap gap-4">
               {prevWork && (
                 <Link
                   href={`/works/${category.slug}/${year}/${prevWork.slug}`}
@@ -151,8 +151,8 @@ export default async function WorkDetailPage({
             </div>
           </div>
 
-          <div className="mt-16 flex items-center justify-between text-[10px] border-t border-gray-200 pt-8">
-            <div className="flex gap-4">
+          <div className="mt-16 flex flex-col sm:flex-row items-start sm:items-center justify-between text-[10px] border-t border-gray-200 pt-8 gap-6">
+            <div className="flex flex-wrap gap-4">
               {prevWork && (
                 <Link
                   href={`/works/${category.slug}/${year}/${prevWork.slug}`}

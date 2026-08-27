@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { WorkCategory } from "@/lib/works-data";
 import { GAP } from "@/lib/gallery-config";
 
@@ -16,6 +17,7 @@ export function CategoryGallery({ categories, gap = GAP }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  const pathname = usePathname() || "";
 
   useEffect(() => {
     const update = () => {
@@ -118,16 +120,27 @@ export function CategoryGallery({ categories, gap = GAP }: Props) {
                   }`}
                   style={isMobile ? {} : { minWidth: `${SIDEBAR_WIDTH}px` }}
                 >
-                  {category.years.map((year) => (
-                    <Link
-                      key={year}
-                      href={`/works/${category.slug}/${year}`}
-                      className="flex items-center gap-2 py-1.5 px-2 rounded text-sm sm:text-base text-gray-600 hover:text-amber-700 hover:bg-amber-50 transition-colors text-right sm:text-left"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-amber-500 transition-colors shrink-0" />
-                      <span className="tabular-nums">{year}</span>
-                    </Link>
-                  ))}
+                  {category.years.map((year) => {
+                    const yearHref = `/works/${category.slug}/${year}`;
+                    const isActive = pathname === yearHref || pathname.startsWith(yearHref + "/");
+                    return (
+                      <Link
+                        key={year}
+                        href={yearHref}
+                        className={
+                          [
+                            "block py-1.5 px-2 rounded text-sm sm:text-base transition-colors",
+                            "text-right sm:text-left",
+                            isActive
+                              ? "text-gray-900 bg-gray-200"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+                          ].join(" ")
+                        }
+                      >
+                        <span className="tabular-nums">{year}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             );

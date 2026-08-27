@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Home" },
+  { href: "/", label: "HOME" },
   { href: "/about", label: "ABOUT" },
   { href: "/works", label: "WORKS" },
   { href: "/researches", label: "RESEARCHES" },
@@ -70,18 +70,12 @@ export function Navigation() {
                     href={item.href}
                     onClick={() => setIsOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 py-3 px-4 rounded-lg transition-colors text-base sm:text-sm font-medium tracking-wide",
+                      "block py-3 px-4 rounded-lg transition-colors text-base sm:text-sm font-medium tracking-wide",
                       isActive
-                        ? "bg-amber-50 text-amber-700"
-                        : "text-gray-700 hover:bg-gray-50"
+                        ? "text-gray-900 bg-gray-200"
+                        : "text-gray-700 hover:bg-gray-100"
                     )}
                   >
-                    <span
-                      className={cn(
-                        "w-2 h-2 rounded-full bg-gray-300 shrink-0",
-                        isActive && "bg-amber-500"
-                      )}
-                    />
                     {item.label}
                   </Link>
                 </li>

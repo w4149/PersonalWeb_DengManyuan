@@ -1,7 +1,12 @@
-﻿export type SubPage = {
-  images: { src: string; alt?: string }[];
+export type SubPage = {
+  images: { src: string; alt?: string; caption?: string }[];
   description?: string;
-  layout?: "grid" | "single" | "stackedRight" | "textLeftStackedRight" | "fiveImageStack" | "row";
+  layout?: "grid" | "single" | "stackedRight" | "textLeftStackedRight" | "fiveImageStack" | "row" | "leftMainRightStacked" | "rowCaption" | "multiRow";
+  /**
+   * multiRow 模板专用：每行放哪几张图片（images 中的下标索引），
+   * 例：[[0,1,2,3], [4,5]] 表示共两行，第一行是第1~4张，第二行是第5~6张
+   */
+  rows?: number[][];
 };
 
 export type Work = {
@@ -361,8 +366,24 @@ export const workCategories: WorkCategory[] = [
           title: "Memory Nearby-Chengdu",
           displayTitle: "Memory Nearby-Chengdu",
           thumbnail:
-            `${R2}/images/installations-2025/memory-nearby/chengdu-version/full.jpg`,
+            `${R2}/images/installations-2025/memory-nearby/chengdu-version/main-1.jpg`,
           aspectRatio: 1.0,
+          layout: "partial",
+          materials: "site-specific installatioin\n2025",
+          description:
+            "Through collecting everyday objects from communities in Chengdu, the work transforms individual memory objects into resin forms and embeds them within a Shan Shui structure. Mountains, rivers, and branches become mediums through which relationships between people and place are collectively generated. Memory-Shan Shui explores how relational connections can emerge from everyday local experiences.",
+          subPages: [
+            {
+              layout: "multiRow",
+              rows: [[0, 1, 2, 3]],
+              images: [
+                { src: `${R2}/images/installations-2025/memory-nearby/chengdu-version/part-1.jpg`, alt: "Chengdu part 1" },
+                { src: `${R2}/images/installations-2025/memory-nearby/chengdu-version/part-2.jpg`, alt: "Chengdu part 2" },
+                { src: `${R2}/images/installations-2025/memory-nearby/chengdu-version/part-3.jpg`, alt: "Chengdu part 3" },
+                { src: `${R2}/images/installations-2025/memory-nearby/chengdu-version/part-4.jpg`, alt: "Chengdu part 4" },
+              ],
+            },
+          ],
         },
         {
           slug: "memory-nearby-huzhou",
@@ -404,16 +425,85 @@ export const workCategories: WorkCategory[] = [
           title: "New Narrative of Foshan",
           displayTitle: "New Narrative of Foshan",
           thumbnail:
-            `${R2}/images/installations-2025/new-narrative-of-foshan/main.png`,
+            `${R2}/images/installations-2025/new-narrative-of-foshan/main-1.png`,
           aspectRatio: 1.7769,
+          layout: "right",
+          materials:
+            "Collaborative painting installation | Assembled (layered) dimensions: 60 × 42 × 65 cm | Flat collage: 200 × 200 cm (individual panels: 60 × 60 cm) | Acrylic panels, acrylic paint, tracing paper, silver leaf, foil, stainless-steel frame | 2025",
+          description:
+            "I initiated a public co-creation call, inviting participants to draw the objects or images they associated most strongly with Foshan. After collecting these materials, I cut and collaged them onto nine acrylic panels, adding my own painting to form a complete image. The participants' drawings and my intervention together create a puzzle of local memory",
+          subPages: [
+            {
+              layout: "leftMainRightStacked",
+              description:
+                "The work gathers multiple perceptions of the same place into one image, then separates and reconstructs it through the overlapping arrangement of acrylic panels on a structure. Through the layering and reconfiguration of transparent acrylic sheets, it reveals the interweaving and regeneration of spatial experiences within a sense of place: seemingly a linear cycle of time, yet actually an accumulation of multiple relationships and a collective perception of those who inhabit the place",
+              images: [
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-1.png`,
+                  alt: "Foshan part 1",
+                },
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-2.jpg`,
+                  alt: "Foshan part 2",
+                },
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-3.png`,
+                  alt: "Foshan part 3",
+                },
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-4.png`,
+                  alt: "Foshan part 4",
+                },
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-5.png`,
+                  alt: "Foshan part 5",
+                },
+              ],
+            },
+            {
+              layout: "grid",
+              images: [
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-6.png`,
+                  alt: "Foshan part 6",
+                  caption: "the paintings collected from collaborators",
+                },
+                {
+                  src: `${R2}/images/installations-2025/new-narrative-of-foshan/part-7.jpg`,
+                  alt: "Foshan part 7",
+                },
+              ],
+            },
+          ],
         },
         {
           slug: "spirit-dwelling",
           title: "Spirit Dwelling",
           displayTitle: "Spirit Dwelling",
           thumbnail:
-            `${R2}/images/installations-2025/spirit-dwelling/detail-1.jpg`,
+            `${R2}/images/installations-2025/spirit-dwelling/main-1.jpg`,
           aspectRatio: 0.6035,
+          layout: "left",
+          materials:
+            "Mixed media painting installation\nOil canvas, quartz sand, ink, acrylic paint, oil paint, paper pulp, silver foil, silver chains, nails, etc.\n40 cm x 60 cm\n2025",
+          description:
+            "作品中的文字是关于 “居住” 、“栖息”的几个甲骨文，如“门”、“室”、“舍”等。树木的根系在大地里自由恣意生长，梦境的紫色烟雾中有山水树石的美好宇宙和我心里的十个太阳。果绿色的花瓶是梦境的出口，也可以在现实中放置一些珍贵的记忆之物。",
+          subPages: [
+            {
+              layout: "multiRow",
+              rows: [[0, 1, 2, 3], [4, 5, 6, 7]],
+              images: [
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-1.jpg`, alt: "Spirit Dwelling part 1" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-2.jpg`, alt: "Spirit Dwelling part 2" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-3.jpg`, alt: "Spirit Dwelling part 3" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-4.jpg`, alt: "Spirit Dwelling part 4" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-5.jpg`, alt: "Spirit Dwelling part 5" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-6.jpg`, alt: "Spirit Dwelling part 6" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-7.jpg`, alt: "Spirit Dwelling part 7" },
+                { src: `${R2}/images/installations-2025/spirit-dwelling/part-8.jpg`, alt: "Spirit Dwelling part 8" },
+              ],
+            },
+          ],
         },
       ],
     },
@@ -436,8 +526,29 @@ export const workCategories: WorkCategory[] = [
           title: "Weishan Memory Collage Workshop",
           displayTitle: "Weishan Memory Collage Workshop",
           thumbnail:
-            `${R2}/images/workshops-2026/weishan-memory-collage-workshop/main.jpg`,
+            `${R2}/images/workshops-2026/weishan-memory-collage-workshop/main-1.jpg`,
           aspectRatio: 1.3654,
+          layout: "right",
+          description:
+            "I invited each participant to select three photographs that represented their memories of Weishan and transform them through cutting, collage, and painting.\n\nWorking with photographs embedded with personal memories, participants collectively constructed experiences of place through processes of making, storytelling, and reconfiguration.\n\nThe workshop approaches place as a relational network that is continuously sensed, narrated, and regenerated, developing Memory-Shan Shui as an artistic practice through which place-based knowledge emerges together with individual life histories.",
+          subPages: [
+            {
+              layout: "multiRow",
+              rows: [[0, 1, 2], [3, 4], [5, 6, 7, 8]],
+              description: "the collage works made by participants",
+              images: [
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-1.jpg`, alt: "Collage workshop part 1" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-2.jpg`, alt: "Collage workshop part 2" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-3.jpg`, alt: "Collage workshop part 3" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-4.jpg`, alt: "Collage workshop part 4" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-5.jpg`, alt: "Collage workshop part 5" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-6.jpg`, alt: "Collage workshop part 6" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-7.jpg`, alt: "Collage workshop part 7" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-8.jpg`, alt: "Collage workshop part 8" },
+                { src: `${R2}/images/workshops-2026/weishan-memory-collage-workshop/part-9.jpg`, alt: "Collage workshop part 9" },
+              ],
+            },
+          ],
         },
       ],
       2025: [
@@ -446,11 +557,28 @@ export const workCategories: WorkCategory[] = [
           title: "The Memory Ritual of Leaves and Trees",
           displayTitle: "the Memory Ritual of Leaves and Trees",
           thumbnail:
-            `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/main.jpg`,
+            `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/main-1.jpg`,
           aspectRatio: 1.7768,
           layout: "left",
           description:
-            "During the Huzhou residency, I invited participants to collect naturally fallen leaves and transform these materials through handcraft into objects such as accessories and bookmarks. The workshop focused on processes of gathering, sensing, and making, exploring how humans and trees can establish a corresponding relationship through material engagement.",
+            "During the Huzhou residency, I invited participants to collect naturally fallen leaves and transform these materials through handcraft into objects such as accessories and bookmarks.\n\nThe workshop focused on processes of gathering, sensing, and making, exploring how humans and trees can establish a corresponding relationship through material engagement.",
+          subPages: [
+            {
+              layout: "multiRow",
+              rows: [[0, 1, 2, 3], [4, 5, 6, 7, 8]],
+              images: [
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-1.jpg`, alt: "Workshop part 1" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-2.jpg`, alt: "Workshop part 2" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-3.jpg`, alt: "Workshop part 3" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-4.jpg`, alt: "Workshop part 4" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-5.jpg`, alt: "Workshop part 5" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-6.jpg`, alt: "Workshop part 6" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-7.jpg`, alt: "Workshop part 7" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-8.jpg`, alt: "Workshop part 8" },
+                { src: `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/part-9.jpg`, alt: "Workshop part 9" },
+              ],
+            },
+          ],
         },
       ],
     },
