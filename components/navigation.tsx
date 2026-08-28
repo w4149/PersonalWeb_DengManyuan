@@ -7,16 +7,29 @@ import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "HOME" },
-  { href: "/about", label: "ABOUT" },
-  { href: "/works", label: "WORKS" },
-  { href: "/researches", label: "RESEARCHES" },
-  { href: "/news", label: "NEWS" },
+  { anchor: "#home", legacyPath: "/", label: "HOME" },
+  { anchor: "#about", legacyPath: "/about", label: "ABOUT" },
+  { anchor: "#works", legacyPath: "/works", label: "WORKS" },
+  { anchor: "#researches", legacyPath: "/researches", label: "RESEARCHES" },
+  { anchor: "#news", legacyPath: "/news", label: "NEWS" },
 ];
+
+function useHash() {
+  const [hash, setHash] = useState(
+    typeof window !== "undefined" ? window.location.hash : ""
+  );
+  useEffect(() => {
+    const onChange = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", onChange);
+    return () => window.removeEventListener("hashchange", onChange);
+  }, []);
+  return hash;
+}
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const hash = useHash();
 
   useEffect(() => {
     if (isOpen) {
@@ -59,15 +72,24 @@ export function Navigation() {
         <div className="pt-20 sm:pt-20 px-6">
           <ul className="space-y-1">
             {navItems.map((item) => {
-              const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
+              // isActive:
+              // 1. 在首页（单页模式）下：根据 hash 判断（/#works → hash = #works）
+              // 2. 在独立路由页面（如 /works/installations/2025）下：根据 pathname 前缀判断
+              let isActive = false;
+              if (pathname === "/") {
+                const currentHash = hash || "#home";
+                isActive = currentHash === item.anchor;
+              } else if (item.legacyPath === "/") {
+                // 非首页时 HOME 不高亮
+                isActive = false;
+              } else {
+                isActive = pathname.startsWith(item.legacyPath);
+              }
 
               return (
-                <li key={item.href}>
+                <li key={item.anchor}>
                   <Link
-                    href={item.href}
+                    href={`/${item.anchor}`}
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       "block py-3 px-4 rounded-lg transition-colors text-base sm:text-sm font-medium tracking-wide",

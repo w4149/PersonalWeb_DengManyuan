@@ -88,6 +88,7 @@ export default function AboutPage() {
 
         <section className="grid md:grid-cols-2 gap-10 md:gap-16 mb-12 md:mb-16">
           <div>
+            <hr className="border-t border-gray-200 mb-8 md:mb-10" />
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-gray-900 mb-6 md:mb-8">
               Exhibitions
             </h2>
@@ -121,6 +122,7 @@ export default function AboutPage() {
 
           <div className="space-y-12 md:space-y-16">
             <div>
+              <hr className="border-t border-gray-200 mb-8 md:mb-10" />
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-gray-900 mb-6 md:mb-8">
                 Artist Residencies
               </h2>

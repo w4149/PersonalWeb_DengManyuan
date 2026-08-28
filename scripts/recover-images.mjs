@@ -16,8 +16,8 @@ const DIRS = [
   "paintings-2024/fragments-of-memory",
   "installations-2026",
   "installations-2026/god-of-happiness",
-  "installations-2026/weishan-memory-i",
-  "installations-2026/weishan-memory-ii",
+  "installations-2026/weishan-memory-ⅰ",
+  "installations-2026/weishan-memory-ⅱ",
   "installations-2025",
   "installations-2025/memory-nearby",
   "installations-2025/memory-nearby/chengdu-version",
@@ -149,7 +149,7 @@ moveWithRename("5.jpg", "installations-2026/god-of-happiness/part-3.jpg");
 
 // Installations - Weishan Memory I
 // 主图.png, ①.jpg, ②.jpg, ③.jpg, ④.jpg
-moveWithRename("1.png", "installations-2026/weishan-memory-i/main.png");
+moveWithRename("1.png", "installations-2026/weishan-memory-ⅰ/main-1.png");
 // The ①②③④ became 1.jpg, 2.jpg, 3.jpg, 4.jpg above but some were already moved
 // Let's handle by checking what's left
 

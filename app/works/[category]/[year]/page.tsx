@@ -56,13 +56,25 @@ export default async function WorkCategoryYearPage({
     yearIndex > 0 ? category.years[yearIndex - 1] : null;
 
   const galleryItems: GalleryItem[] =
-    works?.map((work) => ({
-      src: work.thumbnail,
-      aspectRatio: work.aspectRatio,
-      title: work.title,
-      displayTitle: work.displayTitle || work.title,
-      href: `/works/${category.slug}/${year}/${work.slug}`,
-    })) || [];
+    works?.map((work) => {
+      // 画廊实际展示的源图像 src：优先 cover，其次 thumbnail
+      const gallerySrc = work.cover ?? work.thumbnail;
+      // 画廊布局用的"首屏 fallback ratio"：
+      //  - 如果 src 是 cover（cover 字段非空） → 优先用该 cover 专属的 coverAspectRatio，没有则退到 thumbnail aspectRatio
+      //  - 如果 src 就是 thumbnail（未配 cover） → 直接用 aspectRatio（这就是原图的比例）
+      const galleryAspectRatio = work.cover
+        ? work.coverAspectRatio ?? work.aspectRatio
+        : work.aspectRatio;
+      return {
+        src: gallerySrc,
+        // 当 cover 加载失败（如 R2 Content-Type 异常、ORB 拦截）时，自动回退到作品主图 thumbnail
+        fallbackSrc: work.cover ? work.thumbnail : undefined,
+        aspectRatio: galleryAspectRatio,
+        title: work.title,
+        displayTitle: work.displayTitle || work.title,
+        href: `/works/${category.slug}/${year}/${work.slug}`,
+      };
+    }) || [];
 
   const layout = getLayoutForYear(category.slug, year);
 

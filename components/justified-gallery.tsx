@@ -6,6 +6,11 @@ import { GAP } from "@/lib/gallery-config";
 
 export type GalleryItem = {
   src: string;
+  /**
+   * 可选：当主 src 加载失败（如 R2 Content-Type 异常、ORB 拦截、404 等）时，
+   * 浏览器自动回退到此 URL。典型用法：分类画廊的 cover 加载失败时回退到作品 thumbnail。
+   */
+  fallbackSrc?: string;
   aspectRatio: number;
   title: string;
   displayTitle?: string;
@@ -40,6 +45,8 @@ export function JustifiedGallery({
   const [containerWidth, setContainerWidth] = useState(0);
   const [currentCols, setCurrentCols] = useState(columns.lg || 3);
   const [dims, setDims] = useState<ImgDims[]>([]);
+  // 记录加载失败的图片 index，自动回退到 fallbackSrc
+  const [erroredIndices, setErroredIndices] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     const update = () => {
@@ -159,7 +166,14 @@ export function JustifiedGallery({
       let height = sumR > 0 ? availableWidth / sumR : maxHeight;
       height = Math.max(minHeight, Math.min(maxHeight, height));
 
-      const widths = ratios.map((r) => r * height);
+      // 归一化：保证 widths 总和严格等于 availableWidth，防止 clamp 或浮点误差导致总宽度溢出容器
+      let widths = ratios.map((r) => r * height);
+      const sumW = widths.reduce((a, b) => a + b, 0);
+      if (sumW > 0 && Math.abs(sumW - availableWidth) > 0.01) {
+        const scale = availableWidth / sumW;
+        widths = widths.map((w) => w * scale);
+        height = height * scale; // 同步调整行高以保持宽高比严格匹配图片真实比例（object-contain 不会留白）
+      }
       void allReady; // 暂不区分是否就绪，首屏用降级 aspectRatio，图片加载完 dims 触发 useMemo 重新精确计算一次
 
       result.push({ items: group, height, widths });
@@ -176,7 +190,7 @@ export function JustifiedGallery({
     <div
       ref={containerRef}
       className={`flex flex-col ${className}`}
-      style={{ rowGap: gap }}
+      style={{ rowGap: gap, width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
     >
       {rows.map((row, rowIdx) => {
         const rowStartIdx =
@@ -188,16 +202,17 @@ export function JustifiedGallery({
         return (
           <div
             key={rowIdx}
-            className="flex justify-between"
+            className="flex items-start shrink-0 overflow-hidden"
             style={{
+              gap: `${gap}px`,
               height: row.height + titleGap + (showTitle ? 20 : 0),
+              width: "100%",
+              maxWidth: "100%",
             }}
           >
             {row.items.map((item, k) => {
               const gIdx = rowStartIdx + k;
               const width = row.widths[k];
-              const hasTrueDims =
-                dims[gIdx] && dims[gIdx].w > 0 && dims[gIdx].h > 0;
               return (
                 <div
                   key={item.href}
@@ -210,27 +225,33 @@ export function JustifiedGallery({
                     style={{
                       height: row.height,
                       width,
-                      // 真实尺寸已就绪时：精确按 width/height 显示图片，
-                      // 用 object-fit: cover 会裁剪，这里要保证图片不裁剪，
-                      // 但容器和图片尺寸比完全一致 → 用 contain 也等价于 fill
-                      // 为了防万一留 contain，并把背景设为透明（不要灰色底造成视觉误差）
+                      // 与真实比例严格一致，object-contain 保证完整显示不裁剪不超出
                     }}
                   >
                     <img
                       ref={(el) => { imgRefs.current[gIdx] = el; }}
-                      src={item.src}
+                      src={erroredIndices.has(gIdx) && item.fallbackSrc ? item.fallbackSrc : item.src}
                       alt={item.displayTitle || item.title}
                       loading="lazy"
                       onLoad={(e) => handleImgLoad(gIdx, e)}
-                      className={
-                        hasTrueDims
-                          ? "h-full w-full object-cover"
-                          : "h-full w-full object-contain"
-                      }
+                      onError={() => {
+                        if (item.fallbackSrc && !erroredIndices.has(gIdx)) {
+                          setErroredIndices((prev) => {
+                            const next = new Set(prev);
+                            next.add(gIdx);
+                            return next;
+                          });
+                        }
+                      }}
+                      className="object-contain block"
                       style={{
-                        display: "block",
-                        width: "100%",
-                        height: "100%",
+                        // 使用显式像素尺寸（而非 % 填充父容器）：
+                        // 保证 img 元素内容盒子与 rows 算法算出的目标完全一致，
+                        // 彻底避免 h-full w-full + object-contain 在 浮点精度/比率不匹配
+                        // 时出现的上下留白，从而实现"同行图片实际渲染内容等高"。
+                        width: `${width}px`,
+                        height: `${row.height}px`,
+                        maxWidth: "none",
                       }}
                     />
                   </Link>

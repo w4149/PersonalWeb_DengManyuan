@@ -1,6 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  createContext,
+  useContext,
+  forwardRef,
+} from "react";
 import type { Work, SubPage } from "@/lib/works-data";
 import { GAP } from "@/lib/gallery-config";
 
@@ -9,6 +17,65 @@ type Props = {
   index: number;
   gap?: number;
 };
+
+// 给 work-detail 页面所有子渲染器统一提供的"失败兜底图"：作品主图 thumbnail (main-1)
+// 当任意一张 part-N 图加载失败时（R2 404 / ERR_CONNECTION_CLOSED / ORB 拦截等），
+// 先自动切换到此图；若仍失败则灰底占位，不会出现浏览器红裂图/缺图图标。
+const FallbackThumbnailCtx = createContext<string | undefined>(undefined);
+
+// 单张图片的"安全渲染"包装：内部 img 出错时自动按阶段切换源，不会让浏览器默认裂图破坏视觉。
+// 阶段：0 = 原 src；1 = 回退到作品 thumbnail；2 = 内置浅灰占位 SVG（彻底兜底）。
+// 使用方式：把 <SafeImg ... /> 直接换成 <SafeImg ... />；所有 img 属性都能透传（包括 ref / onLoad / style）。
+const SafeImg = forwardRef<
+  HTMLImageElement,
+  React.ImgHTMLAttributes<HTMLImageElement>
+>((props, ref) => {
+  const [stage, setStage] = useState<0 | 1 | 2>(0);
+  const fallback = useContext(FallbackThumbnailCtx);
+
+  const {
+    src: origSrc = "",
+    onError: outerOnError,
+    style: outerStyle,
+    ...rest
+  } = props;
+
+  const effSrc: string =
+    stage === 0
+      ? origSrc
+      : stage === 1 && fallback
+      ? fallback
+      : // 完全兜底：16×16 浅灰方块 SVG（data URI，不会再加载失败）
+        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><rect fill='%23f5f5f2' width='16' height='16'/></svg>";
+
+  return (
+    <img
+      ref={ref}
+      src={effSrc}
+      onError={(e) => {
+        setStage((s) => {
+          if (s === 2) return 2;
+          // 如果没有提供 fallback（fallback 为空），直接跳过阶段 1 进入 SVG 兜底
+          if (s === 0 && !fallback) return 2;
+          return (s + 1) as 0 | 1 | 2;
+        });
+        outerOnError?.(e);
+      }}
+      style={
+        stage === 2
+          ? {
+              ...(outerStyle || {}),
+              // 最后兜底：让 SVG 小方块 cover 填满整格 + 浅灰背景，不会像裂图
+              objectFit: "cover" as const,
+              background: "#f5f5f2",
+            }
+          : outerStyle
+      }
+      {...rest}
+    />
+  );
+});
+SafeImg.displayName = "SafeImg";
 
 const TITLE_FONT =
   "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif";
@@ -77,110 +144,25 @@ function ImageWithLink({
 }
 
 /**
- * 带 hover caption 的图片组件：
- *  - 图片有 caption 时，鼠标 hover 进入图片区域：
- *    ① 图片整体被灰色半透明蒙版覆盖（background: rgba(0,0,0,0.5)）
- *    ② caption 以白色 10px serif 字体显示在图片水平+垂直中心
- *    ③ caption 内的 "|" 等价于换行符，同时也支持原生换行 \n
- *  - 图片没有 caption 时，渲染结果和纯 <img> 完全一致，无额外包裹层
+ * 把 caption 文本按 | 或 \n 拆成多行并渲染（换行用 <br>）
  */
-function ImageWithCaption({
-  src,
-  alt,
-  caption,
-  className,
-  style,
-  imgRef,
-  imgIndex,
-  onLoad,
-}: {
-  src: string;
-  alt: string;
-  caption?: string;
-  className?: string;
-  style?: React.CSSProperties;
-  imgRef?: React.MutableRefObject<(HTMLImageElement | null)[]>;
-  imgIndex?: number;
-  onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
-}) {
-  const imgEl = (
-    <img
-      ref={
-        imgRef && typeof imgIndex === "number"
-          ? (el) => { imgRef.current[imgIndex] = el; }
-          : undefined
-      }
-      src={src}
-      alt={alt}
-      className={className}
-      style={style}
-      onLoad={onLoad}
-    />
-  );
-
-  if (!caption || caption.length === 0) {
-    return imgEl;
-  }
-
-  // 按 "|" 或 "\n" 都作为换行分隔
+function renderCaptionText(caption: string) {
   const lines = caption.split(/\||\n/).map((l) => l.trim());
-
-  return (
-    <div
-      className="group"
-      style={{
-        position: "relative",
-        display: "inline-block",
-        width: style?.width ?? "auto",
-        height: style?.height ?? "auto",
-      }}
-    >
-      {imgEl}
-
-      {/* hover 蒙版 + caption 居中文字 */}
-      <div
-        className="group-hover:opacity-100 transition-opacity duration-200"
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          opacity: 0,
-          pointerEvents: "none",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: TITLE_FONT,
-            fontSize: "10px",
-            lineHeight: "14pt",
-            color: "#ffffff",
-            textAlign: "center",
-            margin: 0,
-            padding: "0 12px",
-            whiteSpace: "pre-wrap",
-          }}
-        >
-          {lines.map((line, i) => (
-            <span key={i}>
-              {line}
-              {i < lines.length - 1 && <br />}
-            </span>
-          ))}
-        </p>
-      </div>
-    </div>
-  );
+  return lines.map((line, i) => (
+    <span key={i}>
+      {line}
+      {i < lines.length - 1 && <br />}
+    </span>
+  ));
 }
 
 /**
  * 通用单行宽度优先布局（合并了原 GridSubPage 和 RowCaptionSubPage）
- *  - 图片 caption 统一通过 hover 蒙版+居中白字展示（见 ImageWithCaption）
- *    不再物理预留底部空间，因此容器高度统一为 50vh
+ *  - 图片 caption：紧贴图片下方永久可见，样式参考 WORKS 分类画廊"作品名"样式：
+ *      mt-2（8px 间距），text-sm text-gray-700 深灰文字居中，按宽度限制换行
  *  - caption 内容中的 "|" 等价于换行
- *  - 宽度按图片宽高比比例分配（原 grid 行为，优于原 rowCaption 的 width:auto）
+ *  - 宽度按图片真实宽高比比例分配（原 grid 行为，优于原 rowCaption 的 width:auto）
+ *  - 容器高度：图片部分统一 50vh（同行图片严格等高）；caption 在图片块之外，不影响图底对齐
  *  - 可选整页 description，显示在所有图下方
  */
 function GridSubPage({ subPage }: { subPage: SubPage }) {
@@ -260,22 +242,35 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
           style={{ gap: `${gapY}px` }}
         >
           {subPage.images.map((img, i) => (
-            <ImageWithCaption
+            <div
               key={i}
-              imgRef={imgRefs}
-              imgIndex={i}
-              src={img.src}
-              alt={img.alt || `Sub page ${i + 1}`}
-              caption={img.caption}
-              className="object-contain w-full"
-              onLoad={(e) => handleImgLoad(i, e)}
-              style={{
-                height: "auto",
-                maxHeight: "60vh",
-                display: "block",
-                width: "100%",
-              }}
-            />
+              className="flex flex-col items-center w-full"
+            >
+              <div style={{ width: "100%" }}>
+                <img
+                  ref={(el) => { imgRefs.current[i] = el; }}
+                  src={img.src}
+                  alt={img.alt || `Sub page ${i + 1}`}
+                  loading="lazy"
+                  className="object-contain w-full"
+                  onLoad={(e) => handleImgLoad(i, e)}
+                  style={{
+                    height: "auto",
+                    maxHeight: "60vh",
+                    display: "block",
+                    width: "100%",
+                  }}
+                />
+              </div>
+              {img.caption && img.caption.length > 0 && (
+                <p
+                  className="text-gray-700 text-center leading-tight mt-2"
+                  style={{ maxWidth: "100%", fontSize: "10px", opacity: 0.5 }}
+                >
+                  {renderCaptionText(img.caption)}
+                </p>
+              )}
+            </div>
           ))}
         </div>
         {subPage.description && (
@@ -300,26 +295,50 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
       <div
         ref={containerRef}
         className="flex items-start w-full"
-        style={{ gap: `${gapX}px`, height: DESKTOP_HEIGHT }}
+        style={{ gap: `${gapX}px` }}
       >
-        {subPage.images.map((img, i) => (
-          <div key={i} className="flex items-center shrink-0" style={{ height: "100%" }}>
-            <ImageWithCaption
-              imgRef={imgRefs}
-              imgIndex={i}
-              src={img.src}
-              alt={img.alt || `Sub page ${i + 1}`}
-              caption={img.caption}
-              className="object-contain"
-              onLoad={(e) => handleImgLoad(i, e)}
-              style={{
-                height: "100%",
-                width: widths[i] ? `${widths[i]}px` : "auto",
-                display: "block",
-              }}
-            />
-          </div>
-        ))}
+        {subPage.images.map((img, i) => {
+          const itemWidth = widths[i] || undefined;
+          return (
+            <div
+              key={i}
+              className="flex flex-col items-center shrink-0"
+              style={{ width: itemWidth ? `${itemWidth}px` : "auto" }}
+            >
+              {/* 图片块：固定 DESKTOP_HEIGHT（同行图片严格等高，caption 在块外不影响） */}
+              <div
+                className="group relative block overflow-hidden"
+                style={{
+                  height: DESKTOP_HEIGHT,
+                  width: itemWidth ? `${itemWidth}px` : "auto",
+                }}
+              >
+                <img
+                  ref={(el) => { imgRefs.current[i] = el; }}
+                  src={img.src}
+                  alt={img.alt || `Sub page ${i + 1}`}
+                  loading="lazy"
+                  className="h-full w-full object-contain"
+                  onLoad={(e) => handleImgLoad(i, e)}
+                  style={{ display: "block", width: "100%", height: "100%" }}
+                />
+              </div>
+              {/* caption：紧贴图片下方永久可见，参考 WORKS 分类画廊作品名字样式 */}
+              {img.caption && img.caption.length > 0 && (
+                <p
+                  className="text-gray-700 text-center leading-tight mt-2"
+                  style={{
+                    maxWidth: itemWidth ? `${itemWidth}px` : "none",
+                    fontSize: "10px",
+                    opacity: 0.5,
+                  }}
+                >
+                  {renderCaptionText(img.caption)}
+                </p>
+              )}
+            </div>
+          );
+        })}
       </div>
       {subPage.description && (
         <p
@@ -1430,7 +1449,591 @@ function MultiRowSubPage({ subPage }: { subPage: SubPage }) {
   );
 }
 
+/**
+ * 七图 2:3 双栏附页模板（sevenSplit，拓展版：数量 / 宽度比可调）
+ *
+ *  【布局结构】（↕：栏内对齐方向；—/—：内部同行等高）
+ *  ┌─────────────────────────────────────────────────────────────────────┐
+ *  │ 左栏 = splitRatio[0] 份          │ 右栏 = splitRatio[1] 份          │
+ *  │                                  │                                  │
+ *  │ ┌─────────────────────────────┐  │ ┌──────────────────────────────┐ │
+ *  │ │ 左上：images[0]             │  │ │ 右上：images[1..T]           │ │
+ *  │ │ 宽=左栏宽                   │  │ │ 一行 topRightCount 张         │ │ ← 右栏 justify-start → 整体上对齐 ✓
+ *  │ │ 高=左栏宽 / r₀              │  │ │ 同行严格等高，总宽顶满右栏   │ │
+ *  │ └─────────────────────────────┘  │ │ Σ widths + (T-1)*24 = 右栏宽 │ │
+ *  │                                  │ └──────────────────────────────┘ │
+ *  │                                  │  gapY=24                         │
+ *  │                                  │ ┌──────────────────────────────┐ │
+ *  │                                  │ │ 右下：images[T+1]            │ │
+ *  │                                  │ │ 宽=右栏宽，高按比例          │ │
+ *  │                                  │ └──────────────────────────────┘ │
+ *  │ ┌─────────────────────────────┐  │                                  │
+ *  │ │ 左下：images[T+2..T+1+B]    │  │                                  │
+ *  │ │ 一行 leftBottomCount 张     │  │                                  │
+ *  │ │ 同行严格等高，总宽顶满左栏  │  │                                  │
+ *  │ │ Σ widths + (B-1)*24=左栏宽 │  │                                  │
+ *  │ └─────────────────────────────┘  │                                  │ ← 左栏 justify-between → 左下行整体下对齐 ✓
+ *  └─────────────────────────────────────────────────────────────────────┘
+ *
+ *  - splitRatio：默认 [2, 3]（左 40% : 右 60%，两栏间 gap=24）
+ *  - topRightCount：右上一行图片数量，默认 3
+ *  - leftBottomCount：左下一行图片数量，默认 2
+ *  - 图片总数量 = 1 + topRightCount + 1 + leftBottomCount
+ *  - 响应式 <768px：纵向堆叠，顺序 = 左上 → 右上同行 → 右下 → 左下同行
+ */
+function SevenSplitSubPage({ subPage }: { subPage: SubPage }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const [containerW, setContainerW] = useState(0);
+  const [dims, setDims] = useState<{ w: number; h: number }[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const GAP_X = 24;
+  const GAP_Y = 24;
+
+  // 可调参数（默认值与原始七图 2:3 规范一致）
+  const splitRatio: [number, number] = subPage.splitRatio && subPage.splitRatio.length === 2
+    ? subPage.splitRatio
+    : [2, 3];
+  const topRightCount = Math.max(0, Math.floor(subPage.topRightCount ?? 3));
+  const leftBottomCount = Math.max(0, Math.floor(subPage.leftBottomCount ?? 2));
+
+  // 下标映射
+  const TOP_LEFT_IDX = 0;
+  const TOP_RIGHT_START = 1;
+  const TOP_RIGHT_END = TOP_RIGHT_START + topRightCount; // exclusive
+  const BOTTOM_RIGHT_IDX = TOP_RIGHT_END;
+  const BOTTOM_LEFT_START = BOTTOM_RIGHT_IDX + 1;
+  const BOTTOM_LEFT_END = BOTTOM_LEFT_START + leftBottomCount; // exclusive
+  const totalExpected = 1 + topRightCount + 1 + leftBottomCount;
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerW(entry.contentRect.width);
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleImgLoad = useCallback(
+    (i: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      setDims((prev) => {
+        if (prev[i]?.w === img.naturalWidth && prev[i]?.h === img.naturalHeight) return prev;
+        const next = [...prev];
+        next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+        return next;
+      });
+    },
+    []
+  );
+
+  // 首屏已缓存图片直接填充 dims，避免二次重排
+  useEffect(() => {
+    subPage.images.forEach((_, i) => {
+      const img = imgRefs.current[i];
+      if (img && img.complete && img.naturalWidth > 0) {
+        setDims((prev) => {
+          if (prev[i]?.w) return prev;
+          const next = [...prev];
+          next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+          return next;
+        });
+      }
+    });
+    setDims((prev) => {
+      if (prev.length === subPage.images.length) return prev;
+      if (prev.length > subPage.images.length) return prev.slice(0, subPage.images.length);
+      return [...prev, ...new Array(subPage.images.length - prev.length).fill(null)];
+    });
+  }, [subPage.images]);
+
+  const ratioAt = (i: number) => {
+    const d = dims[i];
+    return d && d.w > 0 && d.h > 0 ? d.w / d.h : 1;
+  };
+  const dimsReadyAt = (i: number) => {
+    const d = dims[i];
+    return !!(d && d.w > 0 && d.h > 0);
+  };
+
+  // ====== 通用同行等高算法（N 张图，指定可用宽度，返回 widths 数组和统一高度 H，归一化保证总和=avail） ======
+  const rowEqualHeight = (indices: number[], availW: number) => {
+    const n = indices.length;
+    const widths = new Array<number>(n).fill(0);
+    let H = 0;
+    if (availW <= 0 || n <= 0) return { widths, H };
+    const totalGap = (n - 1) * GAP_X;
+    const av = availW - totalGap;
+    if (av <= 0) {
+      const avg = availW / n;
+      return { widths: new Array<number>(n).fill(avg), H: avg };
+    }
+    if (indices.every((i) => dimsReadyAt(i))) {
+      const rs = indices.map((i) => ratioAt(i));
+      const sumR = rs.reduce((a, b) => a + b, 0);
+      H = sumR > 0 ? av / sumR : 0;
+      let ws = rs.map((r) => r * H);
+      const sumW = ws.reduce((a, b) => a + b, 0);
+      if (sumW > 0 && Math.abs(sumW - av) > 0.01) {
+        const scale = av / sumW;
+        ws = ws.map((w) => w * scale);
+        H = H * scale;
+      }
+      ws.forEach((w, k) => (widths[k] = w));
+    } else {
+      const avg = av / n;
+      for (let k = 0; k < n; k++) widths[k] = avg;
+      H = avg;
+    }
+    return { widths, H };
+  };
+
+  // ====== 桌面端栏宽计算 ======
+  const availTotal = Math.max(0, containerW - GAP_X); // 两栏之间 gap
+  const ratioSum = splitRatio[0] + splitRatio[1] || 1;
+  const leftColW = availTotal * (splitRatio[0] / ratioSum);
+  const rightColW = availTotal * (splitRatio[1] / ratioSum);
+
+  // 左上单张：images[0]，宽顶满左栏
+  const topLeftH = leftColW > 0 ? leftColW / ratioAt(TOP_LEFT_IDX) : 0;
+  // 右下单张：images[T+1]，宽顶满右栏
+  const bottomRightH = rightColW > 0 ? rightColW / ratioAt(BOTTOM_RIGHT_IDX) : 0;
+
+  // 右上一行：images[1..T]，同行等高，总宽顶满右栏
+  const topRightIndices = Array.from({ length: topRightCount }, (_, k) => TOP_RIGHT_START + k);
+  const { widths: topRightWs, H: topRightH } = rowEqualHeight(topRightIndices, rightColW);
+
+  // 左下一行：images[T+2..T+1+B]，同行等高，总宽顶满左栏
+  const bottomLeftIndices = Array.from({ length: leftBottomCount }, (_, k) => BOTTOM_LEFT_START + k);
+  const { widths: bottomLeftWs, H: bottomLeftH } = rowEqualHeight(bottomLeftIndices, leftColW);
+
+  // 单图块渲染（固定 width × height 容器 + 下方 caption）
+  const imageBlock = (idx: number, width: number, height: number) => {
+    const img = subPage.images[idx];
+    if (!img) return null;
+    return (
+      <div
+        key={idx}
+        className="flex flex-col items-center shrink-0"
+        style={{ width: `${width}px` }}
+      >
+        <div
+          className="group relative block overflow-hidden"
+          style={{ width: `${width}px`, height: `${height}px` }}
+        >
+          <img
+            ref={(el) => { imgRefs.current[idx] = el; }}
+            src={img.src}
+            alt={img.alt || `Image ${idx + 1}`}
+            loading="lazy"
+            className="h-full w-full object-contain"
+            onLoad={(e) => handleImgLoad(idx, e)}
+            style={{ display: "block", width: "100%", height: "100%" }}
+          />
+        </div>
+        {img.caption && img.caption.length > 0 && (
+          <p
+            className="text-gray-700 text-center leading-tight mt-2"
+            style={{ maxWidth: `${width}px`, fontSize: "10px", opacity: 0.5 }}
+          >
+            {renderCaptionText(img.caption)}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // 同行多图（一行）
+  const inlineRow = (indices: number[], widths: number[], height: number, itemsAlign: "start" | "end" = "start") => (
+    <div
+      className={`flex shrink-0 ${itemsAlign === "end" ? "items-end" : "items-start"}`}
+      style={{ gap: `${GAP_X}px` }}
+    >
+      {indices.map((idx, k) => imageBlock(idx, widths[k], height))}
+    </div>
+  );
+
+  // 移动端顺序：左上 → 右上行 → 右下 → 左下行
+  const mobileOrder: number[] = [TOP_LEFT_IDX];
+  for (let i = TOP_RIGHT_START; i < TOP_RIGHT_END; i++) mobileOrder.push(i);
+  mobileOrder.push(BOTTOM_RIGHT_IDX);
+  for (let i = BOTTOM_LEFT_START; i < BOTTOM_LEFT_END; i++) mobileOrder.push(i);
+
+  // ============ 移动端：纵向堆叠 ============
+  if (isMobile) {
+    return (
+      <div className="mt-16">
+        <div
+          ref={containerRef}
+          className="flex flex-col w-full"
+          style={{ gap: `${GAP_Y}px` }}
+        >
+          {mobileOrder.map((i) => {
+            const img = subPage.images[i];
+            if (!img) return null;
+            return (
+              <div key={i} className="flex flex-col items-center w-full">
+                <div style={{ width: "100%" }}>
+                  <img
+                    ref={(el) => { imgRefs.current[i] = el; }}
+                    src={img.src}
+                    alt={img.alt || `Image ${i + 1}`}
+                    loading="lazy"
+                    className="object-contain w-full"
+                    onLoad={(e) => handleImgLoad(i, e)}
+                    style={{ width: "100%", height: "auto", display: "block", maxHeight: "60vh" }}
+                  />
+                </div>
+                {img.caption && img.caption.length > 0 && (
+                  <p
+                    className="text-gray-700 text-center leading-tight mt-2"
+                    style={{ maxWidth: "100%", fontSize: "10px", opacity: 0.5 }}
+                  >
+                    {renderCaptionText(img.caption)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {subPage.description && (
+          <p
+            className="text-gray-700 mt-4"
+            style={{
+              fontFamily: TITLE_FONT,
+              fontSize: "10px",
+              lineHeight: "16pt",
+              color: "#464646",
+            }}
+          >
+            {renderDescription(subPage.description)}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ============ 桌面端：双栏 ============
+  return (
+    <div className="mt-16">
+      <div
+        ref={containerRef}
+        className="flex items-stretch w-full"
+        style={{ gap: `${GAP_X}px` }}
+      >
+        {/* 左栏：justify-between → 左上贴顶，左下一整行贴底（下对齐 ✓） */}
+        <div
+          className="flex flex-col justify-between shrink-0"
+          style={{ width: `${leftColW}px`, minHeight: "1px" }}
+        >
+          <div>{imageBlock(TOP_LEFT_IDX, leftColW, topLeftH)}</div>
+          <div style={{ marginTop: `${GAP_Y}px` }}>
+            {inlineRow(bottomLeftIndices, bottomLeftWs, bottomLeftH, "start")}
+          </div>
+        </div>
+        {/* 右栏：justify-between → 右上一行贴顶（上对齐 ✓），右下单张贴底（下对齐 ✓） */}
+        <div
+          className="flex flex-col justify-between shrink-0"
+          style={{ width: `${rightColW}px`, minHeight: "1px" }}
+        >
+          <div>{inlineRow(topRightIndices, topRightWs, topRightH, "start")}</div>
+          <div style={{ marginTop: `${GAP_Y}px` }}>
+            {imageBlock(BOTTOM_RIGHT_IDX, rightColW, bottomRightH)}
+          </div>
+        </div>
+      </div>
+      {subPage.description && (
+        <p
+          className="text-gray-700 mt-4"
+          style={{
+            fontFamily: TITLE_FONT,
+            fontSize: "10px",
+            lineHeight: "16pt",
+            color: "#464646",
+          }}
+        >
+          {renderDescription(subPage.description)}
+        </p>
+      )}
+    </div>
+  );
+  void totalExpected;
+}
+
+/**
+ * Becoming Human 第 2 附页定制 5 图拼贴布局（layout: "becomingHumanCollage5"）
+ * 布局结构（严格对应截图，共 2 行）：
+ *
+ *   Row 1 (2 张，同行严格等高，总宽顶满容器)：
+ *   ┌───────────────────────────────────────┐ gap24 ┌──────────────┐
+ *   │ images[0] = part-8.jpg (大图)        │       │ images[1] =    │
+ *   │ 宽度按真实比例                        │       │ part-9.jpg(小图)│
+ *   └───────────────────────────────────────┘       └──────────────┘
+ *                    heights 严格相等，H1 = (W-24)/(r0+r1)
+ *   gapY = 24px
+ *   Row 2 (3 张，同行严格等高，总宽顶满容器)：
+ *   ┌──────────────┐ gap24 ┌──────────────────┐ gap24 ┌──────────────────┐
+ *   │ images[2] =  │       │ images[3] =      │       │ images[4] =      │
+ *   │ part-10.jpg  │       │ part-11.jpg      │       │ part-12.jpg      │
+ *   └──────────────┘       └──────────────────┘       └──────────────────┘
+ *                    heights 严格相等，H2 = (W-2*24)/(r2+r3+r4)
+ *
+ *  - 移动端 <768px：按 [0,1,2,3,4] 顺序纵向堆叠，每张 w-full/h-auto/maxHeight 60vh
+ *  - 每张图可选 caption（mt-2 / 10px / opacity 0.5 / 深灰居中，与 grid/sevenSplit 同款）
+ *  - 整页可选 description（下方）
+ */
+function BecomingHumanCollage5SubPage({ subPage }: { subPage: SubPage }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const [containerW, setContainerW] = useState(0);
+  const [dims, setDims] = useState<{ w: number; h: number }[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
+  const GAP_X = 24;
+  const GAP_Y = 24;
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) setContainerW(entry.contentRect.width);
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleImgLoad = useCallback(
+    (i: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      setDims((prev) => {
+        if (prev[i]?.w === img.naturalWidth && prev[i]?.h === img.naturalHeight) return prev;
+        const next = [...prev];
+        next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+        return next;
+      });
+    },
+    []
+  );
+
+  useEffect(() => {
+    subPage.images.forEach((_, i) => {
+      const img = imgRefs.current[i];
+      if (img && img.complete && img.naturalWidth > 0) {
+        setDims((prev) => {
+          if (prev[i]?.w) return prev;
+          const next = [...prev];
+          next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+          return next;
+        });
+      }
+    });
+    setDims((prev) => {
+      if (prev.length === subPage.images.length) return prev;
+      if (prev.length > subPage.images.length) return prev.slice(0, subPage.images.length);
+      return [...prev, ...new Array(subPage.images.length - prev.length).fill(null)];
+    });
+  }, [subPage.images]);
+
+  const ratioAt = (i: number) => {
+    const d = dims[i];
+    return d && d.w > 0 && d.h > 0 ? d.w / d.h : 1;
+  };
+  const dimsReadyAt = (i: number) => {
+    const d = dims[i];
+    return !!(d && d.w > 0 && d.h > 0);
+  };
+
+  // 通用同行等高：按可用宽度分配 widths & 统一高度 H，归一化防溢出
+  const rowEqualHeight = (indices: number[], availW: number) => {
+    const n = indices.length;
+    const widths = new Array<number>(n).fill(0);
+    let H = 0;
+    if (availW <= 0 || n <= 0) return { widths, H };
+    const totalGap = (n - 1) * GAP_X;
+    const av = availW - totalGap;
+    if (av <= 0) {
+      const avg = availW / n;
+      return { widths: new Array<number>(n).fill(avg), H: avg };
+    }
+    if (indices.every((i) => dimsReadyAt(i))) {
+      const rs = indices.map((i) => ratioAt(i));
+      const sumR = rs.reduce((a, b) => a + b, 0);
+      H = sumR > 0 ? av / sumR : 0;
+      let ws = rs.map((r) => r * H);
+      const sumW = ws.reduce((a, b) => a + b, 0);
+      if (sumW > 0 && Math.abs(sumW - av) > 0.01) {
+        const scale = av / sumW;
+        ws = ws.map((w) => w * scale);
+        H = H * scale;
+      }
+      ws.forEach((w, k) => (widths[k] = w));
+    } else {
+      const avg = av / n;
+      for (let k = 0; k < n; k++) widths[k] = avg;
+      H = avg;
+    }
+    return { widths, H };
+  };
+
+  // 行计算：Row1 indices=[0,1] 2张；Row2 indices=[2,3,4] 3张
+  const row1 = rowEqualHeight([0, 1], containerW);
+  const row2 = rowEqualHeight([2, 3, 4], containerW);
+
+  const imageBlock = (idx: number, width: number, height: number) => {
+    const img = subPage.images[idx];
+    if (!img) return null;
+    return (
+      <div
+        key={idx}
+        className="flex flex-col items-center shrink-0"
+        style={{ width: `${width}px` }}
+      >
+        <div
+          className="group relative block overflow-hidden"
+          style={{ width: `${width}px`, height: `${height}px` }}
+        >
+          <img
+            ref={(el) => { imgRefs.current[idx] = el; }}
+            src={img.src}
+            alt={img.alt || `Image ${idx + 1}`}
+            loading="lazy"
+            className="h-full w-full object-contain"
+            onLoad={(e) => handleImgLoad(idx, e)}
+            style={{ display: "block", width: "100%", height: "100%" }}
+          />
+        </div>
+        {img.caption && img.caption.length > 0 && (
+          <p
+            className="text-gray-700 text-center leading-tight mt-2"
+            style={{ maxWidth: `${width}px`, fontSize: "10px", opacity: 0.5 }}
+          >
+            {renderCaptionText(img.caption)}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  // ============ 移动端：顺序纵向堆叠 ============
+  if (isMobile) {
+    return (
+      <div className="mt-16">
+        <div
+          ref={containerRef}
+          className="flex flex-col w-full"
+          style={{ gap: `${GAP_Y}px` }}
+        >
+          {[0, 1, 2, 3, 4].map((i) => {
+            const img = subPage.images[i];
+            if (!img) return null;
+            return (
+              <div key={i} className="flex flex-col items-center w-full">
+                <div style={{ width: "100%" }}>
+                  <img
+                    ref={(el) => { imgRefs.current[i] = el; }}
+                    src={img.src}
+                    alt={img.alt || `Image ${i + 1}`}
+                    loading="lazy"
+                    className="object-contain w-full"
+                    onLoad={(e) => handleImgLoad(i, e)}
+                    style={{ width: "100%", height: "auto", display: "block", maxHeight: "60vh" }}
+                  />
+                </div>
+                {img.caption && img.caption.length > 0 && (
+                  <p
+                    className="text-gray-700 text-center leading-tight mt-2"
+                    style={{ maxWidth: "100%", fontSize: "10px", opacity: 0.5 }}
+                  >
+                    {renderCaptionText(img.caption)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {subPage.description && (
+          <p
+            className="text-gray-700 mt-4"
+            style={{
+              fontFamily: TITLE_FONT,
+              fontSize: "10px",
+              lineHeight: "16pt",
+              color: "#464646",
+            }}
+          >
+            {renderDescription(subPage.description)}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // ============ 桌面端：两行结构 ============
+  return (
+    <div className="mt-16">
+      <div
+        ref={containerRef}
+        className="flex flex-col w-full"
+        style={{ gap: `${GAP_Y}px` }}
+      >
+        {/* Row 1: 2 张同行等高 */}
+        <div
+          className="flex shrink-0 items-start w-full"
+          style={{ gap: `${GAP_X}px` }}
+        >
+          {imageBlock(0, row1.widths[0] || 0, row1.H)}
+          {imageBlock(1, row1.widths[1] || 0, row1.H)}
+        </div>
+        {/* Row 2: 3 张同行等高 */}
+        <div
+          className="flex shrink-0 items-start w-full"
+          style={{ gap: `${GAP_X}px` }}
+        >
+          {imageBlock(2, row2.widths[0] || 0, row2.H)}
+          {imageBlock(3, row2.widths[1] || 0, row2.H)}
+          {imageBlock(4, row2.widths[2] || 0, row2.H)}
+        </div>
+      </div>
+      {subPage.description && (
+        <p
+          className="text-gray-700 mt-4"
+          style={{
+            fontFamily: TITLE_FONT,
+            fontSize: "10px",
+            lineHeight: "16pt",
+            color: "#464646",
+          }}
+        >
+          {renderDescription(subPage.description)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function SubPageLayout({ subPage }: { subPage: SubPage }) {
+  if (subPage.layout === "becomingHumanCollage5") {
+    return <BecomingHumanCollage5SubPage subPage={subPage} />;
+  }
+  if (subPage.layout === "sevenSplit") {
+    return <SevenSplitSubPage subPage={subPage} />;
+  }
+
   if (subPage.layout === "multiRow") {
     return <MultiRowSubPage subPage={subPage} />;
   }
@@ -1500,7 +2103,7 @@ function renderSubPages(subPages?: SubPage[]) {
 
 export function WorkDetail({ work, index, gap = GAP }: Props) {
   const displayTitle = work.displayTitle || work.title;
-  const numStr = `${toRoman(index + 1)}. `;
+  const numStr = "";
   const isCenter = work.layout === "center";
   const isWide = work.layout === "wide";
   const isWideBottom = work.layout === "wideBottom";
@@ -1513,10 +2116,10 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
 
   if (isGrid) {
     return (
-      <>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
         <GridLayout work={work} displayTitle={displayTitle} numStr={numStr} />
         {subPages}
-      </>
+      </FallbackThumbnailCtx.Provider>
     );
   }
 
@@ -1527,7 +2130,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
       ? 100
       : (work.imgWidthRatio != null ? work.imgWidthRatio * 100 : 75);
     return (
-      <>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
         <HeroImageBottomLayout
           work={work}
           displayTitle={displayTitle}
@@ -1535,7 +2138,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           imageWidthPercent={imageWidthPercent}
         />
         {subPages}
-      </>
+      </FallbackThumbnailCtx.Provider>
     );
   }
 
@@ -1546,7 +2149,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
       ? 100
       : (work.imgWidthRatio != null ? work.imgWidthRatio * 100 : 75);
     return (
-      <>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
         <HeroImageLayout
           work={work}
           displayTitle={displayTitle}
@@ -1554,13 +2157,13 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           imageWidthPercent={imageWidthPercent}
         />
         {subPages}
-      </>
+      </FallbackThumbnailCtx.Provider>
     );
   }
 
   if (isCenter) {
     return (
-      <>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
         <CenteredLayout
           work={work}
           displayTitle={displayTitle}
@@ -1569,7 +2172,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           gap={gap}
         />
         {subPages}
-      </>
+      </FallbackThumbnailCtx.Provider>
     );
   }
 
@@ -1578,7 +2181,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     // layout === "left" → 图片在左
     const imageSide: "left" | "right" = work.layout === "left" ? "left" : "right";
     return (
-      <>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
         <SideBySideLayout
           work={work}
           displayTitle={displayTitle}
@@ -1587,14 +2190,14 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           gap={gap}
         />
         {subPages}
-      </>
+      </FallbackThumbnailCtx.Provider>
     );
   }
 
   // 兜底（逻辑上已被 isSideBySide 覆盖，防止 lint 警告）
   const fallbackImageSide: "left" | "right" = work.layout === "left" ? "left" : "right";
   return (
-    <>
+    <FallbackThumbnailCtx.Provider value={work.thumbnail}>
       <SideBySideLayout
         work={work}
         displayTitle={displayTitle}
@@ -1603,7 +2206,265 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
         gap={gap}
       />
       {subPages}
-    </>
+    </FallbackThumbnailCtx.Provider>
+  );
+}
+
+/**
+ * HeroImageLayout / HeroImageBottomLayout 共用的"主图同行渲染区"：
+ *  - work.images 有 ≥2 张 → 同行严格等高，真实宽高比比例分配宽度，总宽 = imageWidthPercent% 容器宽，自适应高度
+ *  - 未配置 work.images 或 work.images.length ≤ 1 → 回退到原单图 ImageWithLink 渲染（向后兼容）
+ *  - 多图模式下每张图可附带 caption（可选）：紧贴图片下方 mt-2，10px opacity 0.5 深灰文字居中（同 GridSubPage 新规范）
+ */
+function HeroImageRow({
+  work,
+  displayTitle,
+  imageWidthPercent,
+  maxHeight,
+  areaStyle,
+}: {
+  work: Work;
+  displayTitle: string;
+  imageWidthPercent: number;
+  maxHeight?: string;
+  areaStyle?: React.CSSProperties;
+}) {
+  const widthStyle = `${imageWidthPercent}%`;
+  const images: { src: string; alt?: string; caption?: string }[] =
+    work.images && work.images.length > 0
+      ? work.images
+      : [{ src: work.thumbnail, alt: displayTitle }];
+
+  // 单图：HeroImageLayout / HeroImageBottomLayout 用「外层块占 width: N%」，内部 <img> 撑满。
+  // 关键：若有 heroLink/work.link → 把 width% / maxHeight 挂在 <a> 外层锚点（而不是 <img> 内部百分比），
+  // 避免 inline-block 锚点 shrink-to-fit 打断 "img width% 相对页面含宽块" 的链路 → 导致图片不居中、宽度不到 N%。
+  if (images.length <= 1) {
+    const img0 = images[0];
+    const heroSizeStyle: React.CSSProperties = {
+      width: widthStyle,
+      maxHeight: maxHeight || undefined,
+    };
+
+    const imgEl = (
+      <SafeImg
+        src={img0.src}
+        alt={img0.alt || displayTitle}
+        className="object-contain block transition-[filter] duration-200 group-hover:grayscale"
+        style={{ width: "100%", height: "auto", maxHeight: maxHeight || undefined, display: "block" }}
+      />
+    );
+
+    const wrapLink = work.heroLink ?? work.link;
+    // 共享蒙版（75% 宽的锚点/块内部 overlay），与 wrapHeroImgWithLink 里的写法一致
+    const renderOverlay = (url: string) => (
+      <div className="pointer-events-none absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100 z-10">
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 flex items-center justify-center px-4">
+          <p
+            className="text-white text-center leading-snug"
+            style={{
+              fontSize: "14px",
+              fontFamily: "system-ui, sans-serif",
+              textShadow: "0 1px 3px rgba(0,0,0,0.55)",
+            }}
+          >
+            Click to redirect to
+            <br />
+            <span
+              className="inline-block mt-1 break-all opacity-90"
+              style={{ fontSize: "12px" }}
+            >
+              {url}
+            </span>
+          </p>
+        </div>
+      </div>
+    );
+
+    const heroBlock = wrapLink ? (
+      <a
+        href={wrapLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative flex items-center justify-center shrink-0 group overflow-hidden"
+        style={heroSizeStyle}
+      >
+        {imgEl}
+        {renderOverlay(wrapLink)}
+      </a>
+    ) : (
+      <div
+        className="relative flex items-center justify-center shrink-0 overflow-hidden"
+        style={heroSizeStyle}
+      >
+        {imgEl}
+      </div>
+    );
+
+    return (
+      <div className="flex flex-col items-center" style={areaStyle}>
+        {heroBlock}
+        {renderHeroCaption(work.heroCaption)}
+      </div>
+    );
+  }
+
+  // 多图：同行严格等高，真实宽高比分配宽度，自适应高度
+  return (
+    <HeroImageMultiRow
+      work={work}
+      displayTitle={displayTitle}
+      imageWidthPercent={imageWidthPercent}
+      images={images}
+      areaStyle={areaStyle}
+    />
+  );
+}
+
+function HeroImageMultiRow({
+  work,
+  displayTitle,
+  imageWidthPercent,
+  images,
+  areaStyle,
+}: {
+  work: Work;
+  displayTitle: string;
+  imageWidthPercent: number;
+  images: { src: string; alt?: string; caption?: string }[];
+  areaStyle?: React.CSSProperties;
+}) {
+  const widthStyle = `${imageWidthPercent}%`;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
+  const [contentWidth, setContentWidth] = useState(0);
+  const [dims, setDims] = useState<{ w: number; h: number }[]>([]);
+  const GAP_X = 24;
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const el = containerRef.current;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContentWidth(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const handleImgLoad = useCallback(
+    (i: number, e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.currentTarget;
+      setDims((prev) => {
+        if (prev[i]?.w === img.naturalWidth && prev[i]?.h === img.naturalHeight) return prev;
+        const next = [...prev];
+        next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+        return next;
+      });
+    },
+    []
+  );
+
+  // 首屏已缓存图片直接填充 dims，避免二次重排
+  useEffect(() => {
+    images.forEach((_, i) => {
+      const img = imgRefs.current[i];
+      if (img && img.complete && img.naturalWidth > 0) {
+        setDims((prev) => {
+          if (prev[i]?.w) return prev;
+          const next = [...prev];
+          next[i] = { w: img.naturalWidth, h: img.naturalHeight };
+          return next;
+        });
+      }
+    });
+    setDims((prev) => {
+      if (prev.length === images.length) return prev;
+      if (prev.length > images.length) return prev.slice(0, images.length);
+      return [...prev, ...new Array(images.length - prev.length).fill(null)];
+    });
+  }, [images]);
+
+  const n = images.length;
+  const totalGap = (n - 1) * GAP_X;
+  const availableW = contentWidth - totalGap;
+
+  let rowHeight = 300; // 降级默认高度
+  let widths: number[] = new Array(n).fill(0);
+
+  if (availableW > 0 && dims.length >= n && dims.every((d) => d && d.w > 0 && d.h > 0)) {
+    // 真实宽高比就绪 → 精确比例分配 + 归一化保证总宽 = availableW
+    const ratios = dims.map((d) => d.w / d.h);
+    const sumR = ratios.reduce((a, b) => a + b, 0);
+    rowHeight = sumR > 0 ? availableW / sumR : 300;
+    widths = ratios.map((r) => r * rowHeight);
+    const sumW = widths.reduce((a, b) => a + b, 0);
+    if (sumW > 0 && Math.abs(sumW - availableW) > 0.01) {
+      const scale = availableW / sumW;
+      widths = widths.map((w) => w * scale);
+      rowHeight = rowHeight * scale;
+    }
+  } else if (availableW > 0) {
+    // 降级：用 work.aspectRatio 近似，平均分配每张宽度
+    const ratio = work.aspectRatio > 0 ? work.aspectRatio : 1;
+    const avgW = availableW / n;
+    rowHeight = avgW / ratio;
+    widths = new Array(n).fill(avgW);
+  }
+
+  return (
+    <div className="flex flex-col items-center" style={areaStyle}>
+      <div
+        ref={containerRef}
+        className="flex items-start shrink-0 overflow-hidden justify-center"
+        style={{ width: widthStyle, maxWidth: "100%", gap: `${GAP_X}px` }}
+      >
+        {images.map((img, i) => {
+          const w = widths[i];
+          const rawImgEl = (
+            <SafeImg
+              ref={(el) => { imgRefs.current[i] = el; }}
+              src={img.src}
+              alt={img.alt || displayTitle}
+              loading="lazy"
+              onLoad={(e) => handleImgLoad(i, e)}
+              className="object-contain block transition-[filter] duration-200 group-hover:grayscale"
+              style={{
+                width: w ? `${w}px` : "auto",
+                height: `${rowHeight}px`,
+                maxWidth: "none",
+              }}
+            />
+          );
+          // heroLink 优先于 work.link；heroLink 未设置时仍用 work.link 做单张跳转
+          const wrapLink = work.heroLink ?? work.link;
+          const wrappedImg = wrapHeroImgWithLink(rawImgEl, wrapLink);
+          return (
+            <div
+              key={i}
+              className="flex flex-col items-center shrink-0"
+              style={{ width: w ? `${w}px` : "auto" }}
+            >
+              {wrappedImg}
+              {img.caption && img.caption.length > 0 && (
+                <p
+                  className="text-gray-700 text-center leading-tight mt-2"
+                  style={{
+                    maxWidth: w ? `${w}px` : "none",
+                    fontSize: "10px",
+                    opacity: 0.5,
+                  }}
+                >
+                  {renderCaptionText(img.caption)}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {renderHeroCaption(work.heroCaption)}
+    </div>
   );
 }
 
@@ -1613,6 +2474,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
  *    然后描述文本（居中，宽度与图片对齐；description 可为空）。
  *  - 图片区域无 min-height 包裹，图片尺寸按宽度百分比 + 高度自适应。
  *  - imageWidthPercent: 0~100 的数字（例：100 → 顶满，75 → 75%）
+ *  - 支持 work.images 多图（同 HeroImageRow）：若干图同行严格等高，总宽=imageWidthPercent%，自适应高度
  */
 function HeroImageLayout({
   work,
@@ -1653,21 +2515,18 @@ function HeroImageLayout({
           )}
         </div>
 
-        <div className="flex justify-center">
-          <ImageWithLink
-            src={work.thumbnail}
-            alt={displayTitle}
-            link={work.link}
-            className="object-contain block"
-            style={{ width: widthStyle, maxHeight: "calc(100vh - 200px)" }}
-          />
-        </div>
+        <HeroImageRow
+          work={work}
+          displayTitle={displayTitle}
+          imageWidthPercent={imageWidthPercent}
+          maxHeight="calc(100vh - 200px)"
+        />
 
         {work.description && (
           <div className="flex justify-center mt-4">
             <div style={{ width: widthStyle }}>
               <p
-                className="text-gray-700 text-left sm:text-center"
+                className="text-gray-700 text-left"
                 style={{
                   fontFamily: TITLE_FONT,
                   fontSize: "10px",
@@ -1687,9 +2546,10 @@ function HeroImageLayout({
 
 /**
  * 合并 WideBottomLayout + BottomLayout：
- *  - 与 HeroImageLayout 结构一致，但图片放在最小高度 80vh 的 flex 居中区域内
+ *  - 与 HeroImageLayout 结构一致，但图片放在最小高度 60vh 的 flex 居中区域内
  *    （保持原 WideBottomLayout / BottomLayout 的视觉：标题在下、图片垂直空间占满并居中顶部）
  *  - 可配置图片宽度百分比 imageWidthPercent（0~100，默认 100）。
+ *  - 支持 work.images 多图（同 HeroImageRow）：若干图同行严格等高，总宽=imageWidthPercent%，自适应高度
  */
 function HeroImageBottomLayout({
   work,
@@ -1730,21 +2590,19 @@ function HeroImageBottomLayout({
           )}
         </div>
 
-        <div className="flex justify-center items-start" style={{ minHeight: "60vh", marginTop: "16px" }}>
-          <ImageWithLink
-            src={work.thumbnail}
-            alt={displayTitle}
-            link={work.link}
-            className="object-contain block"
-            style={{ width: widthStyle, maxHeight: "calc(100vh - 300px)" }}
-          />
-        </div>
+        <HeroImageRow
+          work={work}
+          displayTitle={displayTitle}
+          imageWidthPercent={imageWidthPercent}
+          maxHeight="calc(100vh - 300px)"
+          areaStyle={{ minHeight: "60vh", marginTop: "16px", display: "flex", justifyContent: "center", alignItems: "flex-start" }}
+        />
 
         {work.description && (
           <div className="flex justify-center mt-4">
             <div style={{ width: widthStyle }}>
               <p
-                className="text-gray-700 text-left sm:text-center"
+                className="text-gray-700 text-left"
                 style={{
                   fontFamily: TITLE_FONT,
                   fontSize: "10px",
@@ -1775,6 +2633,10 @@ function GridLayout({
   const gapX = 24;
   const gapY = 12;
 
+  // work.gridColumns：桌面端（≥640px = sm）强制固定列数，移动端永远 1 列。
+  // 省略（=undefined / null）则走 legacy 响应式：sm=2 列 / lg=3 列
+  const fixedCols = work.gridColumns && work.gridColumns > 0 ? Math.floor(work.gridColumns) : null;
+
   return (
     <div className="flex flex-col items-center w-full">
       <div className="w-full">
@@ -1804,29 +2666,52 @@ function GridLayout({
           )}
         </div>
 
+        {/* 网格：移动端永远 1 列；桌面端列数由 fixedCols 或 legacy 响应式决定 */}
         <div
-          className="grid"
-          style={{
-            gridTemplateColumns: "repeat(1, 1fr)",
-            gap: `${gapY}px ${gapX}px`,
-          }}
+          data-gridlayout-fixed={fixedCols ?? ""}
+          className={
+            fixedCols
+              ? "grid grid-cols-1"
+              : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          }
+          style={{ gap: `${gapY}px ${gapX}px` }}
         >
-          <div
-            className="grid sm:grid-cols-2 lg:grid-cols-3"
-            style={{ gap: `${gapY}px ${gapX}px` }}
-          >
-            {images.map((img, i) => (
-              <ImageWithLink
-                key={i}
-                src={img.src}
-                alt={img.alt || `${displayTitle} ${i + 1}`}
-                link={work.link}
-                className="object-contain block w-full"
-                style={{ maxHeight: "60vh" }}
-              />
-            ))}
-          </div>
+          {images.map((img, i) => (
+            <div key={i} className="flex flex-col items-center w-full">
+              <div className="w-full">
+                <ImageWithLink
+                  src={img.src}
+                  alt={img.alt || `${displayTitle} ${i + 1}`}
+                  link={work.link}
+                  className="object-contain block w-full"
+                  style={{ maxHeight: "60vh" }}
+                />
+              </div>
+              {img.caption && img.caption.length > 0 && (
+                <p
+                  className="text-gray-700 text-center leading-tight mt-2 w-full"
+                  style={{ fontSize: "10px", opacity: 0.5 }}
+                >
+                  {renderCaptionText(img.caption)}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
+
+        {/* 当设置了固定列数 fixedCols 时：用 @media(sm) 把桌面端列数切为 fixedCols（移动端仍 1 列） */}
+        {fixedCols && (
+          <style
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{
+              __html:
+                `@media (min-width: 640px) { ` +
+                `div[data-gridlayout-fixed="${fixedCols}"] { ` +
+                `grid-template-columns: repeat(${fixedCols}, 1fr) !important; ` +
+                `} }`,
+            }}
+          />
+        )}
 
         {work.description && (
           <div className="flex justify-center mt-4">
@@ -1914,20 +2799,28 @@ function CenteredLayout({
     };
   }, [measure, isMobile]);
 
-  const image = (
-    <ImageWithLink
+  const imgStyle = isMobile
+    ? { width: "100%", height: "auto", maxHeight: "70vh", display: "block" }
+    : { height: IMAGE_HEIGHT, width: "auto", display: "block" };
+  const rawImage = (
+    <SafeImg
       src={work.thumbnail}
       alt={displayTitle}
-      link={work.link}
-      imgRef={imgRef}
+      ref={imgRef}
       onLoad={measure}
-      className="object-contain shrink-0 mx-auto"
-      style={
-        isMobile
-          ? { width: "100%", height: "auto", maxHeight: "70vh", display: "block" }
-          : { height: IMAGE_HEIGHT, width: "auto", display: "block" }
-      }
+      className="object-contain shrink-0 mx-auto block transition-[filter] duration-200 group-hover:grayscale"
+      style={imgStyle}
     />
+  );
+  // 若有 heroLink → 包在 <a target=_blank>；否则仍走 work.link（原 ImageWithLink 老语义）
+  const linkedImage = wrapHeroImgWithLink(rawImage, work.heroLink ?? work.link);
+
+  // 图片块：<a><img></a>（或 <img>）下方挂 heroCaption
+  const image = (
+    <div className="flex flex-col items-center" style={{ flexShrink: 0 }}>
+      {linkedImage}
+      {renderHeroCaption(work.heroCaption)}
+    </div>
   );
 
   const textPanel = (
@@ -2005,6 +2898,74 @@ function CenteredLayout({
  *    文本面板占剩余空间，不足时文本自动换行收缩。
  *  - 移动端：切换为垂直堆叠布局，图片在上方，文本在下方
  */
+/**
+ * 渲染作品详情页"主图下方"的 heroCaption（若 work.heroCaption 存在）
+ * 样式统一：mt-2 / 10px / text-center / text-gray-700 / opacity 0.5
+ */
+function renderHeroCaption(caption?: string) {
+  if (!caption) return null;
+  return (
+    <p
+      className="mt-2 w-full text-center leading-tight text-gray-700"
+      style={{ fontSize: "10px", opacity: 0.5 }}
+    >
+      {renderCaptionText(caption)}
+    </p>
+  );
+}
+
+/**
+ * 把"主图"包到 heroLink（作品详情页专用跳转）的 <a> 标签里。
+ * - 若 heroLink 存在：<a target=_blank rel=noopener> 包裹
+ *   同时增加 group-hover 交互：
+ *     a) 图片变为 grayscale 灰 + 一层半透明黑灰蒙版
+ *     b) 蒙版正中央显示「Click to redirect to 真实URL」
+ * - 若 heroLink 不存在 → 原样返回 imgEl（不做任何包裹 / 不加蒙版交互）
+ *
+ * 注意：本函数的 <a> 默认是 shrink-to-fit（inline-block），锚点盒模型 = 图片盒模型本身，
+ * 蒙版会精确覆盖到图片区域。对于 HeroImageRow「width 75% 在锚点自身」的场景应走内联写法而非本函数。
+ */
+function wrapHeroImgWithLink(
+  imgEl: React.ReactElement,
+  heroLink?: string
+): React.ReactElement {
+  if (!heroLink) return imgEl;
+  return (
+    <a
+      href={heroLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative inline-block shrink-0 group overflow-hidden"
+    >
+      {imgEl}
+      {/* 蒙版层：hover 时淡入，灰色 + 深半透明蒙版叠加 → 整体"灰色蒙版"效果 */}
+      <div className="pointer-events-none absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" />
+        {/* 中心文字 */}
+        <div className="absolute inset-0 flex items-center justify-center px-4">
+          <p
+            className="text-white text-center leading-snug"
+            style={{
+              fontSize: "14px",
+              fontFamily: "system-ui, sans-serif",
+              textShadow: "0 1px 3px rgba(0,0,0,0.55)",
+            }}
+          >
+            Click to redirect to
+            <br />
+            <span
+              className="inline-block mt-1 break-all opacity-90"
+              style={{ fontSize: "12px" }}
+            >
+              {heroLink}
+            </span>
+          </p>
+        </div>
+      </div>
+    </a>
+  );
+}
+
 function SideBySideLayout({
   work,
   displayTitle,
@@ -2029,12 +2990,12 @@ function SideBySideLayout({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const image = (
-    <ImageWithLink
+  // 原图 <img>：禁用 ImageWithLink 自带的 work.link wrapping（因为外层统一用 heroLink）
+  const rawImage = (
+    <SafeImg
       src={work.thumbnail}
       alt={displayTitle}
-      link={work.link}
-      className="object-contain"
+      className="object-contain transition-[filter] duration-200 group-hover:grayscale"
       style={
         isMobile
           ? {
@@ -2053,6 +3014,17 @@ function SideBySideLayout({
             }
       }
     />
+  );
+
+  // 有 heroLink → 包 <a target=_blank>
+  const linkedImage = wrapHeroImgWithLink(rawImage, work.heroLink);
+
+  // 主图块：<img>（或 <a><img></a>）下方挂 heroCaption（若有），桌面端/移动端共用
+  const image = (
+    <div className="flex flex-col items-center" style={{ flexShrink: 0 }}>
+      {linkedImage}
+      {renderHeroCaption(work.heroCaption)}
+    </div>
   );
 
   const textPanel = (
