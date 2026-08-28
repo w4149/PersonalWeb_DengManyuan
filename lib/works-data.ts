@@ -23,6 +23,12 @@ export type SubPage = {
    * （共 leftBottomCount 张）
    */
   leftBottomCount?: number;
+  /**
+   * row / multiRow 模板专用：所有行图片整体占父容器的宽度百分比（1~100），
+   * 默认 100（占满整行）。例如设置为 75 时每行仅占 75% 页面宽度并居中。
+   * 也可用于其他行优先布局（如 rowCaption），同样默认 100。
+   */
+  widthPercent?: number;
 };
 
 export type Work = {
@@ -208,7 +214,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/paintings-2025/becoming-human/main-1.jpg`,
           cover: `${R2}/images/paintings-2025/covers/becoming-human.jpg`,
-          aspectRatio: 1.1756,
+          aspectRatio: 1.0078,
           layout: "wide",
           materials:
             "Natural pigments, ink, colored pencil on rice paper | 25×27 cm | 2025",
@@ -281,7 +287,7 @@ export const workCategories: WorkCategory[] = [
           title: "Rock and Tree Ⅰ",
           displayTitle: "Rock and Tree Ⅰ",
           thumbnail: `${R2}/images/paintings-2025/rock-and-tree-ⅰ/main-1.png`,
-          cover: `${R2}/images/paintings-2025/covers/rock-and-tree-i.png`,
+          cover: `${R2}/images/paintings-2025/covers/rock-and-tree-ⅰ.png`,
           aspectRatio: 1.011,
           layout: "partial",
           imgWidthRatio: 0.75,
@@ -294,7 +300,7 @@ export const workCategories: WorkCategory[] = [
           title: "Rock and Tree Ⅱ",
           displayTitle: "Rock and Tree Ⅱ",
           thumbnail: `${R2}/images/paintings-2025/rock-and-tree-ⅱ/main-1.png`,
-          cover: `${R2}/images/paintings-2025/covers/rock-and-tree-ii.png`,
+          cover: `${R2}/images/paintings-2025/covers/rock-and-tree-ⅱ.png`,
           aspectRatio: 1.0044,
           layout: "partial",
           imgWidthRatio: 0.75,
@@ -316,7 +322,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/paintings-2025/tree-spirit/main-1.png`,
           cover: `${R2}/images/paintings-2025/covers/tree-spirit.jpg`,
-          aspectRatio: 1.1099,
+          aspectRatio: 2.2215,
           layout: "wide",
           materials:
             "Hemp paper, oil painting frame, traditional\nChinese pigments, gold lacquer, resin mixed\nmedia | 30 x 40 cm | 2025",
@@ -325,6 +331,7 @@ export const workCategories: WorkCategory[] = [
           subPages: [
             {
               layout: "multiRow",
+              widthPercent: 75,
               description: "",
               images: Array.from({ length: 3 }, (_, i) => ({
                 src: `${R2}/images/paintings-2025/tree-spirit/part-${i + 1}.jpg`,
@@ -366,6 +373,7 @@ export const workCategories: WorkCategory[] = [
           subPages: [
             {
               layout: "multiRow",
+              widthPercent: 75,
               description: "",
               images: Array.from({ length: 11 }, (_, i) => ({
                 src: `${R2}/images/paintings-2024/fragments-of-memory/part-${i + 1}.jpg`,
@@ -408,7 +416,7 @@ export const workCategories: WorkCategory[] = [
           displayTitle: "Non-Dualism",
           thumbnail: `${R2}/images/paintings-2024/non-dualism/main-1.jpg`,
           cover: `${R2}/images/paintings-2024/covers/non-dualism.jpg`,
-          aspectRatio: 1.5,
+          aspectRatio: 0.6667,
           layout: "left",
           materials:
             "Acrylic on canvas, traditional Chinese\nmineral pigments, gold mud, white ink |\n80*130cm | 2024",
@@ -463,7 +471,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2026/god-of-happiness/main-1.jpg`,
           cover: `${R2}/images/installations-2026/covers/god-of-happiness.jpg`,
-          aspectRatio: 1.8293,
+          aspectRatio: 0.7952,
           layout: "left",
           materials: "Co-created Painting Installation | 79cm×98cm | 2026",
           description:
@@ -505,7 +513,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2026/weishan-memory-ⅰ/main-1.png`,
           cover: `${R2}/images/installations-2026/covers/weishan-memory-ⅰ.png`,
-          aspectRatio: 1.7769,
+          aspectRatio: 1.5256,
           layout: "wide",
           materials: "site- specific photo collage and visitor- interaction installation | 2026",
           description:
@@ -572,7 +580,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2025/memory-nearby/chengdu-version/main-1.jpg`,
           cover: `${R2}/images/installations-2025/covers/memory-nearby-chengdu.jpg`,
-          aspectRatio: 1.0,
+          aspectRatio: 1.3333,
           layout: "partial",
           materials: "site-specific installatioin\n2025",
           description:
@@ -597,7 +605,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2025/memory-nearby/huzhou-version/main-1.jpg`,
           cover: `${R2}/images/installations-2025/covers/memory-nearby-huzhou.jpg`,
-          aspectRatio: 1.0,
+          aspectRatio: 0.7499,
           layout: "right",
           materials: "site-specific installatioin | 2025",
           description:
@@ -633,7 +641,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2025/new-narrative-of-foshan/main-1.png`,
           cover: `${R2}/images/installations-2025/covers/new-narrative-of-foshan.png`,
-          aspectRatio: 1.7769,
+          aspectRatio: 1.1438,
           layout: "right",
           materials:
             "Collaborative painting installation | Assembled (layered) dimensions: 60 × 42 × 65 cm | Flat collage: 200 × 200 cm (individual panels: 60 × 60 cm) | Acrylic panels, acrylic paint, tracing paper, silver leaf, foil, stainless-steel frame | 2025",
@@ -690,7 +698,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/installations-2025/spirit-dwelling/main-1.jpg`,
           cover: `${R2}/images/installations-2025/covers/spirit-dwelling.jpg`,
-          aspectRatio: 0.6035,
+          aspectRatio: 0.7679,
           layout: "left",
           materials:
             "Mixed media painting installation\nOil canvas, quartz sand, ink, acrylic paint, oil paint, paper pulp, silver foil, silver chains, nails, etc.\n40 cm x 60 cm\n2025",
@@ -735,7 +743,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/workshops-2026/weishan-memory-collage-workshop/main-1.png`,
           cover: `${R2}/images/workshops-2026/covers/weishan-memory-collage-workshop.png`,
-          aspectRatio: 1.3654,
+          aspectRatio: 1.3376,
           layout: "partial",
           imgWidthRatio: 0.75,
           heroLink:
@@ -770,7 +778,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail:
             `${R2}/images/workshops-2025/the-memory-ritual-of-leaves-and-trees/main-1.jpg`,
           cover: `${R2}/images/workshops-2025/covers/the-memory-ritual-of-leaves-and-trees.jpg`,
-          aspectRatio: 1.7768,
+          aspectRatio: 1.0,
           layout: "left",
           description:
             "During the Huzhou residency, I invited participants to collect naturally fallen leaves and transform these materials through handcraft into objects such as accessories and bookmarks.\n\nThe workshop focused on processes of gathering, sensing, and making, exploring how humans and trees can establish a corresponding relationship through material engagement.",

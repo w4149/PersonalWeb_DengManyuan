@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { GAP } from "@/lib/gallery-config";
+import { PreviewableImg } from "@/components/previewable-image";
 
 export type GalleryItem = {
   src: string;
@@ -228,11 +229,13 @@ export function JustifiedGallery({
                       // 与真实比例严格一致，object-contain 保证完整显示不裁剪不超出
                     }}
                   >
-                    <img
+                    <PreviewableImg
                       ref={(el) => { imgRefs.current[gIdx] = el; }}
                       src={erroredIndices.has(gIdx) && item.fallbackSrc ? item.fallbackSrc : item.src}
                       alt={item.displayTitle || item.title}
                       loading="lazy"
+                      // 画廊分层：不显示"View original image"胶囊（只有详情页提供）
+                      showViewOriginal={false}
                       onLoad={(e) => handleImgLoad(gIdx, e)}
                       onError={() => {
                         if (item.fallbackSrc && !erroredIndices.has(gIdx)) {

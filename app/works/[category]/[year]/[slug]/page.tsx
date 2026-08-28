@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navigation } from "@/components/navigation";
 import { WorkDetail } from "@/components/work-detail";
+import { PreviewableImg } from "@/components/previewable-image";
 import {
   getCategory,
   getWork,
@@ -66,7 +68,9 @@ export default async function WorkDetailPage({
 
   return (
     <main className="min-h-screen bg-white">
-      <Navigation />
+      <Suspense fallback={null}>
+        <Navigation />
+      </Suspense>
 
       {useNewLayout ? (
         <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-16 md:py-24">
@@ -127,9 +131,11 @@ export default async function WorkDetailPage({
                   maxWidth: `${maxWidth}px`,
                 }}
               >
-                <img
+                {/* 页面级 OG hero：预览图节省首屏流量，无"View original image"按钮（用户指定仅 WorkDetail 展示） */}
+                <PreviewableImg
                   src={work.thumbnail}
                   alt={work.title}
+                  showViewOriginal={false}
                   className="w-full h-auto object-contain"
                 />
               </div>

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Navigation } from "@/components/navigation";
 
 export const metadata = {
@@ -8,7 +9,9 @@ export const metadata = {
 export default function NewsPage() {
   return (
     <main className="min-h-screen bg-white">
-      <Navigation />
+      <Suspense fallback={null}>
+        <Navigation />
+      </Suspense>
 
       <div className="max-w-5xl mx-auto px-8 md:px-16 lg:px-24 py-16 md:py-24">
         <h1 className="text-6xl md:text-7xl font-serif italic text-gray-900 mb-8">

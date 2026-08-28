@@ -1,0 +1,15 @@
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2024\covers\preview\non-dualism.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-10.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-11.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-12.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-2.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-3.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-6.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-7.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\paintings-2025\becoming-human\preview\part-9.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\workshops-2025\the-memory-ritual-of-leaves-and-trees\preview\part-1.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\installations-2025\memory-nearby\huzhou-version\preview\part-1.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\installations-2025\memory-nearby\huzhou-version\preview\part-2.webp"
+Remove-Item "D:\Trae_Code\Project\DengManyuan_PersonalWeb\public\images\installations-2025\memory-nearby\huzhou-version\preview\part-3.webp"
+
+# 之后执行: node scripts/generate-previews.mjs

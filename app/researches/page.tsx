@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Navigation } from "@/components/navigation";
 
 const TITLE_FONT =
@@ -11,7 +12,9 @@ export const metadata = {
 export default function ResearchesPage() {
   return (
     <main className="min-h-screen bg-white">
-      <Navigation />
+      <Suspense fallback={null}>
+        <Navigation />
+      </Suspense>
 
       <div className="max-w-5xl mx-auto px-8 md:px-16 lg:px-24 py-16 md:py-24">
         <h1

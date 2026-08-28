@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Navigation } from "@/components/navigation";
 import { CategoryGallery } from "@/components/category-gallery";
 import { workCategories } from "@/lib/works-data";
@@ -8,7 +9,9 @@ const TITLE_FONT =
 export default function HomePage() {
   return (
     <main className="h-screen overflow-y-auto scroll-smooth snap-y snap-proximity bg-white">
-      <Navigation />
+      <Suspense fallback={null}>
+        <Navigation />
+      </Suspense>
 
       {/* ============================================================
           SECTION 1 · HOME
@@ -231,7 +234,9 @@ export default function HomePage() {
             WORKS
           </h1>
 
-          <CategoryGallery categories={workCategories} />
+          <Suspense fallback={null}>
+            <CategoryGallery categories={workCategories} />
+          </Suspense>
         </div>
       </section>
 

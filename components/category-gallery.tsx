@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { WorkCategory } from "@/lib/works-data";
 import { GAP } from "@/lib/gallery-config";
+import { PreviewableImg } from "@/components/previewable-image";
 
 type Props = {
   categories: WorkCategory[];
@@ -179,12 +180,14 @@ export function CategoryGallery({ categories, gap = GAP }: Props) {
                         : { height: row.height, width: imgWidth }
                     }
                   >
-                    <img
+                    <PreviewableImg
                       ref={(el) => {
                         imgRefs.current[catIdx] = el;
                       }}
                       src={category.coverImage}
                       alt={category.title}
+                      // 画廊层：不显示"View original image"胶囊
+                      showViewOriginal={false}
                       // 显式像素尺寸 + object-contain 兜底：
                       // 与 JustifiedGallery 同款修复，保证同行内容严格等高，不留上下白边
                       className="object-contain block bg-gray-50"

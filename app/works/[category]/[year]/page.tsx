@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Navigation } from "@/components/navigation";
@@ -80,7 +81,9 @@ export default async function WorkCategoryYearPage({
 
   return (
     <main className="min-h-screen bg-white">
-      <Navigation />
+      <Suspense fallback={null}>
+        <Navigation />
+      </Suspense>
 
       <div className="max-w-6xl mx-auto px-6 sm:px-8 md:px-16 lg:px-24 py-16 md:py-24">
         <nav className="text-sm text-gray-500 mb-8 flex items-center gap-2">

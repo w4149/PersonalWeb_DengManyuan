@@ -15,13 +15,16 @@ const navItems = [
 ];
 
 function useHash() {
-  const [hash, setHash] = useState(
-    typeof window !== "undefined" ? window.location.hash : ""
-  );
+  // ⚠️ 关键 SSR 约束：首帧 useState 初始值必须在服务端 / 客户端首帧完全一致，
+  // 否则 Next.js App Router + React 18 StrictMode 会抛 Hydration Mismatch → 移动端直接白屏崩溃。
+  // 因此永远不要在 useState 初始化里读 window.location.hash；
+  // 统一先给空字符串，再在客户端 useEffect 中同步真实 hash。
+  const [hash, setHash] = useState("");
   useEffect(() => {
-    const onChange = () => setHash(window.location.hash);
-    window.addEventListener("hashchange", onChange);
-    return () => window.removeEventListener("hashchange", onChange);
+    const sync = () => setHash(window.location.hash);
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
   }, []);
   return hash;
 }

@@ -5,12 +5,16 @@ import {
   useEffect,
   useRef,
   useCallback,
-  createContext,
   useContext,
   forwardRef,
 } from "react";
 import type { Work, SubPage } from "@/lib/works-data";
 import { GAP } from "@/lib/gallery-config";
+import {
+  FallbackThumbnailCtx,
+  ShowViewOriginalCtx,
+  PreviewableImg,
+} from "@/components/previewable-image";
 
 type Props = {
   work: Work;
@@ -18,14 +22,10 @@ type Props = {
   gap?: number;
 };
 
-// 给 work-detail 页面所有子渲染器统一提供的"失败兜底图"：作品主图 thumbnail (main-1)
-// 当任意一张 part-N 图加载失败时（R2 404 / ERR_CONNECTION_CLOSED / ORB 拦截等），
-// 先自动切换到此图；若仍失败则灰底占位，不会出现浏览器红裂图/缺图图标。
-const FallbackThumbnailCtx = createContext<string | undefined>(undefined);
-
 // 单张图片的"安全渲染"包装：内部 img 出错时自动按阶段切换源，不会让浏览器默认裂图破坏视觉。
 // 阶段：0 = 原 src；1 = 回退到作品 thumbnail；2 = 内置浅灰占位 SVG（彻底兜底）。
 // 使用方式：把 <SafeImg ... /> 直接换成 <SafeImg ... />；所有 img 属性都能透传（包括 ref / onLoad / style）。
+// FallbackThumbnailCtx 从共享文件 previewable-image.tsx 导入（同一份 Context，WorkDetail 根 Provider 照常赋值）。
 const SafeImg = forwardRef<
   HTMLImageElement,
   React.ImgHTMLAttributes<HTMLImageElement>
@@ -77,6 +77,11 @@ const SafeImg = forwardRef<
 });
 SafeImg.displayName = "SafeImg";
 
+// ————— 预览图/查看原图相关代码已抽离到 @/components/previewable-image.tsx —————
+// PreviewableImg, toPreviewSrc, cnPreview, extractObjectFitClasses,
+// FallbackThumbnailCtx, ShowViewOriginalCtx 都在共享文件里导出。
+// 上面 SafeImg 使用共享 FallbackThumbnailCtx，保持三级 stage 语义与旧版完全等价。
+
 const TITLE_FONT =
   "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif";
 const MONO_FONT =
@@ -123,14 +128,17 @@ function ImageWithLink({
   imgRef?: React.RefObject<HTMLImageElement>;
   onLoad?: () => void;
 }) {
+  // 若有 link → 整个作品是外部跳转：隐藏"查看原图"（与 work-level 规则一致，显式覆盖双重保险）
+  const showVO = !link;
   const imgEl = (
-    <img
+    <PreviewableImg
       ref={imgRef}
       src={src}
       alt={alt}
       className={className}
       style={style}
       onLoad={onLoad}
+      showViewOriginal={showVO}
     />
   );
   if (link) {
@@ -247,7 +255,7 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
               className="flex flex-col items-center w-full"
             >
               <div style={{ width: "100%" }}>
-                <img
+                <PreviewableImg
                   ref={(el) => { imgRefs.current[i] = el; }}
                   src={img.src}
                   alt={img.alt || `Sub page ${i + 1}`}
@@ -313,7 +321,7 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
                   width: itemWidth ? `${itemWidth}px` : "auto",
                 }}
               >
-                <img
+                <PreviewableImg
                   ref={(el) => { imgRefs.current[i] = el; }}
                   src={img.src}
                   alt={img.alt || `Sub page ${i + 1}`}
@@ -438,7 +446,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
             </p>
           )}
           {leftImgs.map((img, i) => (
-            <img
+            <PreviewableImg
               key={`left-${i}`}
               ref={(el) => { imgRefs.current[i] = el; }}
               src={img.src}
@@ -453,7 +461,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
             />
           ))}
           {rightImg && (
-            <img
+            <PreviewableImg
               ref={(el) => { imgRefs.current[2] = el; }}
               src={rightImg.src}
               alt={rightImg.alt || "Right image"}
@@ -471,8 +479,8 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
     );
   }
 
-  const H = containerSize.h;
-  const W = containerSize.w;
+  const H = containerSize?.h ?? 0;
+  const W = containerSize?.w ?? 0;
 
   const leftAvailableH = H - gapY;
   const eachLeftH = leftAvailableH / 2;
@@ -530,7 +538,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
           style={{ height: "100%", gap: `${gapY}px`, width: `${finalLeftWidth}px` }}
         >
           {leftImgs.map((img, i) => (
-            <img
+            <PreviewableImg
               key={i}
               ref={(el) => { imgRefs.current[i] = el; }}
               src={img.src}
@@ -546,7 +554,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
           ))}
         </div>
         {rightImg && (
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[2] = el; }}
             src={rightImg.src}
             alt={rightImg.alt || "Right image"}
@@ -632,7 +640,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
           style={{ gap: `${gapY}px` }}
         >
           {leftImgs.map((img, i) => (
-            <img
+            <PreviewableImg
               key={`left-${i}`}
               ref={(el) => { imgRefs.current[i] = el; }}
               src={img.src}
@@ -648,7 +656,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
             />
           ))}
           {rightImg && (
-            <img
+            <PreviewableImg
               ref={(el) => { imgRefs.current[2] = el; }}
               src={rightImg.src}
               alt={rightImg.alt || "Right image"}
@@ -680,8 +688,8 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
     );
   }
 
-  const H = containerSize.h;
-  const W = containerSize.w;
+  const H = containerSize?.h ?? 0;
+  const W = containerSize?.w ?? 0;
 
   const eachLeftH = H > 0 ? (H - gapY) / 2 : 0;
 
@@ -723,7 +731,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
           style={{ height: "100%", gap: `${gapY}px`, width: `${finalLeftWidth}px` }}
         >
           {leftImgs.map((img, i) => (
-            <img
+            <PreviewableImg
               key={i}
               ref={(el) => { imgRefs.current[i] = el; }}
               src={img.src}
@@ -740,7 +748,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
           ))}
         </div>
         {rightImg && (
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[2] = el; }}
             src={rightImg.src}
             alt={rightImg.alt || "Right image"}
@@ -826,7 +834,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
           className="flex flex-col w-full"
           style={{ gap: "24px" }}
         >
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[0] = el; }}
             src={leftTopImg.src}
             alt={leftTopImg.alt || "Left Top"}
@@ -834,7 +842,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             className="object-contain w-full"
             style={{ height: "auto", maxHeight: "60vh", display: "block" }}
           />
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[1] = el; }}
             src={centerImg.src}
             alt={centerImg.alt || "Center"}
@@ -842,7 +850,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             className="object-contain w-full"
             style={{ height: "auto", maxHeight: "70vh", display: "block" }}
           />
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[2] = el; }}
             src={leftBottomImg.src}
             alt={leftBottomImg.alt || "Left Bottom"}
@@ -850,7 +858,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             className="object-contain w-full"
             style={{ height: "auto", maxHeight: "60vh", display: "block" }}
           />
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[3] = el; }}
             src={rightTopImg.src}
             alt={rightTopImg.alt || "Right Top"}
@@ -858,7 +866,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             className="object-contain w-full"
             style={{ height: "auto", maxHeight: "60vh", display: "block" }}
           />
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[4] = el; }}
             src={rightBottomImg.src}
             alt={rightBottomImg.alt || "Right Bottom"}
@@ -871,8 +879,8 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
     );
   }
 
-  const H = containerSize.h || 600;
-  const totalW = containerSize.w || 1200;
+  const H = containerSize?.h ?? 600;
+  const totalW = containerSize?.w ?? 1200;
   const colW = totalW / 3;
   const gap = GAP;
 
@@ -978,7 +986,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
       >
         {/* Side Images */}
         {sideImages.map((s) => (
-          <img
+          <PreviewableImg
             key={s.imgIndex}
             ref={(el) => { imgRefs.current[s.imgIndex] = el; }}
             src={s.src}
@@ -1001,7 +1009,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
         ))}
 
         {/* Center Image (on top when stacked) */}
-        <img
+        <PreviewableImg
           ref={(el) => { imgRefs.current[1] = el; }}
           src={centerImg.src}
           alt={centerImg.alt || "Center"}
@@ -1105,7 +1113,7 @@ function WidthRow({
       data-row-key={rowKey}
     >
       {images.map((img, i) => (
-        <img
+        <PreviewableImg
           key={i}
           ref={(el) => { imgRefs.current[i] = el; }}
           src={img.src}
@@ -1125,9 +1133,48 @@ function WidthRow({
 }
 
 function RowSubPage({ subPage }: { subPage: SubPage }) {
+  const widthPct =
+    typeof subPage.widthPercent === "number"
+      ? Math.min(100, Math.max(1, subPage.widthPercent))
+      : 100;
+  const widthWrapperStyle: React.CSSProperties | undefined =
+    widthPct < 100
+      ? {
+          width: `${widthPct}%`,
+          maxWidth: "100%",
+          marginLeft: "auto",
+          marginRight: "auto",
+        }
+      : undefined;
+  const rowBlock = (
+    <WidthRow images={subPage.images} gapX={GAP} />
+  );
+  const descBlock = subPage.description ? (
+    <p
+      className="text-gray-700 mt-4"
+      style={{
+        fontFamily: TITLE_FONT,
+        fontSize: "10px",
+        lineHeight: "16pt",
+        color: "#464646",
+      }}
+    >
+      {renderDescription(subPage.description)}
+    </p>
+  ) : null;
   return (
     <div className="mt-16">
-      <WidthRow images={subPage.images} gapX={GAP} />
+      {widthWrapperStyle ? (
+        <div style={widthWrapperStyle}>
+          {rowBlock}
+          {descBlock}
+        </div>
+      ) : (
+        <>
+          {rowBlock}
+          {descBlock}
+        </>
+      )}
     </div>
   );
 }
@@ -1244,7 +1291,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
         <div className="flex flex-col w-full" style={{ gap: `${gap}px` }}>
           {/* 左图 + description（保持原顺序）*/}
           <div className="flex flex-col w-full">
-            <img
+            <PreviewableImg
               ref={(el) => { imgRefs.current[0] = el; }}
               src={leftImg.src}
               alt={leftImg.alt || "Left image"}
@@ -1269,7 +1316,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
 
           {/* 右上大图 + 右下所有图（支持任意张，垂直堆叠顺序排列）*/}
           <div className="flex flex-col w-full" style={{ gap: `${gap}px` }}>
-            <img
+            <PreviewableImg
               ref={(el) => { imgRefs.current[1] = el; }}
               src={topRightImg.src}
               alt={topRightImg.alt || "Top right image"}
@@ -1280,7 +1327,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
             {bottomRow.map((img, offset) => {
               const imgIdx = 2 + offset;
               return (
-                <img
+                <PreviewableImg
                   key={imgIdx}
                   ref={(el) => { imgRefs.current[imgIdx] = el; }}
                   src={img.src}
@@ -1307,7 +1354,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
       >
         {/* 左列：左图 + description（独立向下延伸）*/}
         <div className="flex flex-col" style={{ width: W0 ? `${W0}px` : "auto" }}>
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[0] = el; }}
             src={leftImg.src}
             alt={leftImg.alt || "Left image"}
@@ -1344,7 +1391,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
             gap: `${gap}px`,
           }}
         >
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[1] = el; }}
             src={topRightImg.src}
             alt={topRightImg.alt || "Top right image"}
@@ -1371,7 +1418,7 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
                 const imgIdx = 2 + offset;
                 const bw = bottomWidths[offset];
                 return (
-                  <img
+                  <PreviewableImg
                     key={imgIdx}
                     ref={(el) => { imgRefs.current[imgIdx] = el; }}
                     src={img.src}
@@ -1411,39 +1458,67 @@ function MultiRowSubPage({ subPage }: { subPage: SubPage }) {
     subPage.rows && subPage.rows.length > 0
       ? subPage.rows
       : [subPage.images.map((_, i) => i)];
+  const widthPct =
+    typeof subPage.widthPercent === "number"
+      ? Math.min(100, Math.max(1, subPage.widthPercent))
+      : 100;
+  const widthWrapperStyle: React.CSSProperties | undefined =
+    widthPct < 100
+      ? {
+          width: `${widthPct}%`,
+          maxWidth: "100%",
+          marginLeft: "auto",
+          marginRight: "auto",
+        }
+      : undefined;
+
+  const rowsBlock = (
+    <div
+      className="flex flex-col w-full"
+      style={{ rowGap: `${rowGap}px` }}
+    >
+      {rowsDef.map((rowIndices, rowIdx) => {
+        const rowImages: ImgSrc[] = rowIndices
+          .map((idx) => subPage.images[idx])
+          .filter((img): img is ImgSrc => !!img);
+        return (
+          <WidthRow
+            key={`row-${rowIdx}`}
+            images={rowImages}
+            gapX={gapX}
+            rowKey={`r${rowIdx}`}
+          />
+        );
+      })}
+    </div>
+  );
+
+  const descBlock = subPage.description ? (
+    <p
+      className="text-gray-700 mt-4"
+      style={{
+        fontFamily: TITLE_FONT,
+        fontSize: "10px",
+        lineHeight: "16pt",
+        color: "#464646",
+      }}
+    >
+      {renderDescription(subPage.description)}
+    </p>
+  ) : null;
 
   return (
     <div className="mt-16">
-      <div
-        className="flex flex-col w-full"
-        style={{ rowGap: `${rowGap}px` }}
-      >
-        {rowsDef.map((rowIndices, rowIdx) => {
-          const rowImages: ImgSrc[] = rowIndices
-            .map((idx) => subPage.images[idx])
-            .filter((img): img is ImgSrc => !!img);
-          return (
-            <WidthRow
-              key={`row-${rowIdx}`}
-              images={rowImages}
-              gapX={gapX}
-              rowKey={`r${rowIdx}`}
-            />
-          );
-        })}
-      </div>
-      {subPage.description && (
-        <p
-          className="text-gray-700 mt-4"
-          style={{
-            fontFamily: TITLE_FONT,
-            fontSize: "10px",
-            lineHeight: "16pt",
-            color: "#464646",
-          }}
-        >
-          {renderDescription(subPage.description)}
-        </p>
+      {widthWrapperStyle ? (
+        <div style={widthWrapperStyle}>
+          {rowsBlock}
+          {descBlock}
+        </div>
+      ) : (
+        <>
+          {rowsBlock}
+          {descBlock}
+        </>
       )}
     </div>
   );
@@ -1631,7 +1706,7 @@ function SevenSplitSubPage({ subPage }: { subPage: SubPage }) {
           className="group relative block overflow-hidden"
           style={{ width: `${width}px`, height: `${height}px` }}
         >
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[idx] = el; }}
             src={img.src}
             alt={img.alt || `Image ${idx + 1}`}
@@ -1684,7 +1759,7 @@ function SevenSplitSubPage({ subPage }: { subPage: SubPage }) {
             return (
               <div key={i} className="flex flex-col items-center w-full">
                 <div style={{ width: "100%" }}>
-                  <img
+                  <PreviewableImg
                     ref={(el) => { imgRefs.current[i] = el; }}
                     src={img.src}
                     alt={img.alt || `Image ${i + 1}`}
@@ -1907,7 +1982,7 @@ function BecomingHumanCollage5SubPage({ subPage }: { subPage: SubPage }) {
           className="group relative block overflow-hidden"
           style={{ width: `${width}px`, height: `${height}px` }}
         >
-          <img
+          <PreviewableImg
             ref={(el) => { imgRefs.current[idx] = el; }}
             src={img.src}
             alt={img.alt || `Image ${idx + 1}`}
@@ -1944,7 +2019,7 @@ function BecomingHumanCollage5SubPage({ subPage }: { subPage: SubPage }) {
             return (
               <div key={i} className="flex flex-col items-center w-full">
                 <div style={{ width: "100%" }}>
-                  <img
+                  <PreviewableImg
                     ref={(el) => { imgRefs.current[i] = el; }}
                     src={img.src}
                     alt={img.alt || `Image ${i + 1}`}
@@ -2064,7 +2139,7 @@ function SubPageLayout({ subPage }: { subPage: SubPage }) {
     const img = subPage.images[0];
     return (
       <div className="mt-16">
-        <img
+        <PreviewableImg
           src={img.src}
           alt={img.alt || "Sub page"}
           className="object-contain block w-full"
@@ -2112,14 +2187,24 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
   const isBottom = work.layout === "bottom";
   const isGrid = work.layout === "grid";
 
+  // work 级开关：有 heroLink / work.link（整个作品是外部跳转）→ 主图 + 所有 part-N 都隐藏"查看原图"
+  const showWorkLevelVO = !(work.heroLink || work.link);
+  const wrapCtx = (node: React.ReactNode) => (
+    <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+      <ShowViewOriginalCtx.Provider value={showWorkLevelVO}>
+        {node}
+      </ShowViewOriginalCtx.Provider>
+    </FallbackThumbnailCtx.Provider>
+  );
+
   const subPages = renderSubPages(work.subPages);
 
   if (isGrid) {
-    return (
-      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+    return wrapCtx(
+      <>
         <GridLayout work={work} displayTitle={displayTitle} numStr={numStr} />
         {subPages}
-      </FallbackThumbnailCtx.Provider>
+      </>
     );
   }
 
@@ -2129,8 +2214,8 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     const imageWidthPercent = isWideBottom
       ? 100
       : (work.imgWidthRatio != null ? work.imgWidthRatio * 100 : 75);
-    return (
-      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+    return wrapCtx(
+      <>
         <HeroImageBottomLayout
           work={work}
           displayTitle={displayTitle}
@@ -2138,7 +2223,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           imageWidthPercent={imageWidthPercent}
         />
         {subPages}
-      </FallbackThumbnailCtx.Provider>
+      </>
     );
   }
 
@@ -2148,8 +2233,8 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     const imageWidthPercent = isWide
       ? 100
       : (work.imgWidthRatio != null ? work.imgWidthRatio * 100 : 75);
-    return (
-      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+    return wrapCtx(
+      <>
         <HeroImageLayout
           work={work}
           displayTitle={displayTitle}
@@ -2157,13 +2242,13 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           imageWidthPercent={imageWidthPercent}
         />
         {subPages}
-      </FallbackThumbnailCtx.Provider>
+      </>
     );
   }
 
   if (isCenter) {
-    return (
-      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+    return wrapCtx(
+      <>
         <CenteredLayout
           work={work}
           displayTitle={displayTitle}
@@ -2172,7 +2257,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           gap={gap}
         />
         {subPages}
-      </FallbackThumbnailCtx.Provider>
+      </>
     );
   }
 
@@ -2180,8 +2265,8 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
     // layout === "right" 或未设置 layout → 图片在右
     // layout === "left" → 图片在左
     const imageSide: "left" | "right" = work.layout === "left" ? "left" : "right";
-    return (
-      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+    return wrapCtx(
+      <>
         <SideBySideLayout
           work={work}
           displayTitle={displayTitle}
@@ -2190,14 +2275,14 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
           gap={gap}
         />
         {subPages}
-      </FallbackThumbnailCtx.Provider>
+      </>
     );
   }
 
   // 兜底（逻辑上已被 isSideBySide 覆盖，防止 lint 警告）
   const fallbackImageSide: "left" | "right" = work.layout === "left" ? "left" : "right";
-  return (
-    <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+  return wrapCtx(
+    <>
       <SideBySideLayout
         work={work}
         displayTitle={displayTitle}
@@ -2206,7 +2291,7 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
         gap={gap}
       />
       {subPages}
-    </FallbackThumbnailCtx.Provider>
+    </>
   );
 }
 
@@ -2246,51 +2331,25 @@ function HeroImageRow({
     };
 
     const imgEl = (
-      <SafeImg
+      <PreviewableImg
         src={img0.src}
         alt={img0.alt || displayTitle}
-        className="object-contain block transition-[filter] duration-200 group-hover:grayscale"
+        className="object-contain block"
         style={{ width: "100%", height: "auto", maxHeight: maxHeight || undefined, display: "block" }}
       />
     );
 
     const wrapLink = work.heroLink ?? work.link;
-    // 共享蒙版（75% 宽的锚点/块内部 overlay），与 wrapHeroImgWithLink 里的写法一致
-    const renderOverlay = (url: string) => (
-      <div className="pointer-events-none absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100 z-10">
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" />
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <p
-            className="text-white text-center leading-snug"
-            style={{
-              fontSize: "14px",
-              fontFamily: "system-ui, sans-serif",
-              textShadow: "0 1px 3px rgba(0,0,0,0.55)",
-            }}
-          >
-            Click to redirect to
-            <br />
-            <span
-              className="inline-block mt-1 break-all opacity-90"
-              style={{ fontSize: "12px" }}
-            >
-              {url}
-            </span>
-          </p>
-        </div>
-      </div>
-    );
 
     const heroBlock = wrapLink ? (
       <a
         href={wrapLink}
         target="_blank"
         rel="noopener noreferrer"
-        className="relative flex items-center justify-center shrink-0 group overflow-hidden"
+        className="relative flex items-center justify-center shrink-0 overflow-hidden"
         style={heroSizeStyle}
       >
         {imgEl}
-        {renderOverlay(wrapLink)}
       </a>
     ) : (
       <div
@@ -2423,13 +2482,13 @@ function HeroImageMultiRow({
         {images.map((img, i) => {
           const w = widths[i];
           const rawImgEl = (
-            <SafeImg
+            <PreviewableImg
               ref={(el) => { imgRefs.current[i] = el; }}
               src={img.src}
               alt={img.alt || displayTitle}
               loading="lazy"
               onLoad={(e) => handleImgLoad(i, e)}
-              className="object-contain block transition-[filter] duration-200 group-hover:grayscale"
+              className="object-contain block"
               style={{
                 width: w ? `${w}px` : "auto",
                 height: `${rowHeight}px`,
@@ -2803,12 +2862,12 @@ function CenteredLayout({
     ? { width: "100%", height: "auto", maxHeight: "70vh", display: "block" }
     : { height: IMAGE_HEIGHT, width: "auto", display: "block" };
   const rawImage = (
-    <SafeImg
+    <PreviewableImg
       src={work.thumbnail}
       alt={displayTitle}
       ref={imgRef}
       onLoad={measure}
-      className="object-contain shrink-0 mx-auto block transition-[filter] duration-200 group-hover:grayscale"
+      className="object-contain shrink-0 mx-auto block"
       style={imgStyle}
     />
   );
@@ -2917,13 +2976,7 @@ function renderHeroCaption(caption?: string) {
 /**
  * 把"主图"包到 heroLink（作品详情页专用跳转）的 <a> 标签里。
  * - 若 heroLink 存在：<a target=_blank rel=noopener> 包裹
- *   同时增加 group-hover 交互：
- *     a) 图片变为 grayscale 灰 + 一层半透明黑灰蒙版
- *     b) 蒙版正中央显示「Click to redirect to 真实URL」
- * - 若 heroLink 不存在 → 原样返回 imgEl（不做任何包裹 / 不加蒙版交互）
- *
- * 注意：本函数的 <a> 默认是 shrink-to-fit（inline-block），锚点盒模型 = 图片盒模型本身，
- * 蒙版会精确覆盖到图片区域。对于 HeroImageRow「width 75% 在锚点自身」的场景应走内联写法而非本函数。
+ * - 若 heroLink 不存在 → 原样返回 imgEl
  */
 function wrapHeroImgWithLink(
   imgEl: React.ReactElement,
@@ -2935,33 +2988,9 @@ function wrapHeroImgWithLink(
       href={heroLink}
       target="_blank"
       rel="noopener noreferrer"
-      className="relative inline-block shrink-0 group overflow-hidden"
+      className="relative inline-block shrink-0 overflow-hidden"
     >
       {imgEl}
-      {/* 蒙版层：hover 时淡入，灰色 + 深半透明蒙版叠加 → 整体"灰色蒙版"效果 */}
-      <div className="pointer-events-none absolute inset-0 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
-        <div className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" />
-        {/* 中心文字 */}
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <p
-            className="text-white text-center leading-snug"
-            style={{
-              fontSize: "14px",
-              fontFamily: "system-ui, sans-serif",
-              textShadow: "0 1px 3px rgba(0,0,0,0.55)",
-            }}
-          >
-            Click to redirect to
-            <br />
-            <span
-              className="inline-block mt-1 break-all opacity-90"
-              style={{ fontSize: "12px" }}
-            >
-              {heroLink}
-            </span>
-          </p>
-        </div>
-      </div>
     </a>
   );
 }
@@ -2992,10 +3021,10 @@ function SideBySideLayout({
 
   // 原图 <img>：禁用 ImageWithLink 自带的 work.link wrapping（因为外层统一用 heroLink）
   const rawImage = (
-    <SafeImg
+    <PreviewableImg
       src={work.thumbnail}
       alt={displayTitle}
-      className="object-contain transition-[filter] duration-200 group-hover:grayscale"
+      className="object-contain"
       style={
         isMobile
           ? {
