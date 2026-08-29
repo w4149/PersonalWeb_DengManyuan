@@ -215,7 +215,7 @@ export function JustifiedGallery({
 
   if (items.length === 0) return null;
 
-  const titleGap = showTitle ? 6 : 0;
+  const titleGap = showTitle ? 8 : 0;
 
   return (
     <div
@@ -236,7 +236,7 @@ export function JustifiedGallery({
             className="flex items-start shrink-0 overflow-hidden"
             style={{
               gap: `${gap}px`,
-              height: row.height + titleGap + (showTitle ? 20 : 0),
+              height: row.height + titleGap + (showTitle ? 28 : 0),
               width: "100%",
               maxWidth: "100%",
             }}

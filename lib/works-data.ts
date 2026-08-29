@@ -321,7 +321,13 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2025/sinking/main-1.jpg`,
           cover: `${R2}/images/paintings-2025/covers/sinking.jpg`,
           aspectRatio: 1.2281,
-          layout: "wide",
+          layout: "partial",
+          images: [
+            {
+              src: `${R2}/images/paintings-2025/sinking/main-1.jpg`,
+              alt: "Sinking",
+            },
+          ],
           materials: "quartz sand, acrylic, ink, chalk, gauze, ballpoint pen, plaster mixed media on oil canvas | 40cm × 60cm, 2025",
         },
         {
@@ -768,7 +774,7 @@ export const workCategories: WorkCategory[] = [
           imgWidthRatio: 0.75,
           heroLink:
             "https://youtu.be/hQQYAGv5Joc?is=G24nUufJKaHK3fC0",
-          heroCaption: "A video documenting the entire workshop process, URL:https://youtu.be/uJXzXT_XhTk",
+          heroCaption: "A video documenting the entire workshop process, URL:https://youtu.be/hQQYAGv5Joc?is=G24nUufJKaHK3fC0",
           description:
             "I invited each participant to select three photographs that represented their memories of Weishan and transform them through cutting, collage, and painting.\n\nWorking with photographs embedded with personal memories, participants collectively constructed experiences of place through processes of making, storytelling, and reconfiguration.\n\nThe workshop approaches place as a relational network that is continuously sensed, narrated, and regenerated, developing Memory-Shan Shui as an artistic practice through which place-based knowledge emerges together with individual life histories.",
           subPages: [

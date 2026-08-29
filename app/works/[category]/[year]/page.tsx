@@ -120,7 +120,7 @@ export default async function WorkCategoryYearPage({
           </div>
         )}
 
-        <div className="mt-16 flex items-center justify-between text-[10px]">
+        <div className="mt-16 flex items-center justify-between text-[12px]">
           <div className="flex gap-4">
             {prevYear && (
               <Link
