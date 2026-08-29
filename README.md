@@ -183,8 +183,123 @@ https://pub-0152450371c44ecb87bb433ea94e2039.r2.dev/images/
 - **caption 样式**（图像下文字 / 图像上悬浮说明）：
   - 文字大小 10px / 浅灰 / opacity 0.5 / 居中 / `marginTop: 8px`
   - 内容中 `|` 或 `\n` 都视为换行（`renderCaptionText` 按 `/\||\n/` 切行）
+  - ⚠️ caption 是**唯一保持 10px 的文字区块**；标题 / 材料 / 描述 / 底部导航字号见下一节"全局字号对照表"
 - **分类画廊字号**：桌面端 `clamp(14px, row.height × 13.5%, 48px)`，移动端 `clamp(1.1rem, 4.5vw, 2.25rem)`
 - **可点击跳转图像**：双端共享 hover 灰色蒙版 + 中央「Click to redirect to {URL}」，200ms 淡入淡出（`group`/`pointer-events:none overlay`）
+
+### 全局字号对照表（2026-08-29 统一）
+
+| 模块 | 元素 | 字体 | 字号 | 样式 | 代码位置 |
+|---|---|---|---|---|---|
+| 作品详情主页 / 附页 | 标题 h1 | `TITLE_FONT`（serif italic）| **20px** | `text-gray-900 italic` | work-detail.tsx Hero\*/Centered/SideBySide 等 |
+| 作品详情主页 / 附页 | 材料 p | `MONO_FONT`（monospace）| **14px** | `color:#464646 / 16pt line-height / sm:text-right 或 text-left` | work-detail.tsx materials 渲染 |
+| 作品详情主页 / 附页 | 描述 `<p>` | `TITLE_FONT`（serif）| **12px** | `color:#464646 / 16pt line-height / **一律 text-left**` | work-detail.tsx 全模板 description |
+| 作品主页 / 附页 / 画廊 | image caption / heroCaption | 默认 sans-serif | **10px（不变）** | `opacity 0.5 / text-center / text-gray-700` | 见上方 caption 样式 |
+| 底部导航（PREV YEAR / PREV WORK / PREV SUB / NEXT）| `<Link>` 容器 | 默认 sans-serif | **12px** | `text-gray-600` | `app/works/[category]/[year]/page.tsx L123`、`[slug]/page.tsx L79/L160`（以前 `text-[10px]`，8-29 统一上调）|
+| 分类画廊（WORKS/×××/YYYY）| 作品名 span | 默认 sans-serif | `text-sm = 14px` | `text-gray-700 leading-tight text-center` + `mt-2` 居中 | `justified-gallery.tsx` title 区 |
+
+> 对齐规则补充：CenteredLayout 材料 text **左对齐**（2026-08-29 由 sm:text-right → text-left 覆盖）；Hero\* 标题行左/右边界 = 图片 wrapper 左/右边界（与 description 共用同一个 `width:imageWidthPercent%` 居中块，2026-08 修复）。
+
+---
+
+## 交互与体验机制（2026-08-29 轮新增）
+
+本节记录所有"UI 层行为类"功能，后续新增交互时**同步维护一张"入口 / 代码 / 约束"表**，避免碎片化记忆。
+
+### 1. Preview → 原图 + 全屏 Lightbox 浮窗
+
+`components/previewable-image.tsx` 是作品详情页**所有 `<img>` 的外壳**。
+
+```
+用户首次进入作品页（preview.webp）
+  │
+  ├── 点击 "View original image" 按钮
+  │     ├─ ① inline crossfade 300ms：preview.opacity 0.4 → 1 → 原尺寸 jpg 完整显示
+  │     └─ ② 打开【单例全屏灰色 Lightbox】（由 LightboxProvider 提供，作用域仅限 WorkDetail，见下文）
+  │
+  └── 点击 文档流内的图片本身（grid/part-N/主图都一样）
+        └─ 直接打开 Lightbox（等同于"再看图 → 放大"）
+```
+
+#### Lightbox 细节（决策 A1/B1/D3 固化）
+
+| 项 | 值 |
+|---|---|
+| 作用域 | 只挂在 `WorkDetail` 外层（首页 / 画廊页没有 View original 入口，不挂载 Provider）|
+| 遮罩 | `rgba(30,30,30,0.88)` 深灰半透明 88%，`fixed inset-0 z-[9999]`，opacity 180ms 淡入淡出 |
+| 图片尺寸 | `max-width: calc(100vw − 80px); max-height: calc(100vh − 80px); width:auto; height:auto; object-fit: contain`（四边留白 40px，保证完整显示 + 尽可能大）|
+| 关闭方式 | ① 点击遮罩**任何地方**（含图片本体）cursor-zoom-out 直接关；② 键盘 ESC；③ body 自动锁滚动（关时还原）|
+| 叠化/扩展 | Provider 内部 `{open, src}` 状态；PreviewableImg 通过 `useLightbox()` 拿到 open 回调；所有 PreviewableImg 实例共享同一浮窗 |
+| 不生效情况 | 当 `heroLink ?? work.link` 存在 → `ShowViewOriginalCtx=false`，按钮渲染但被 Context 隐藏（保持主图跳转外链语义优先）|
+
+代码：
+- [`components/previewable-image.tsx` LightboxProvider / useLightbox / PreviewableImg](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/previewable-image.tsx)
+- [`components/work-detail.tsx` 顶部 `<LightboxProvider>` 挂载](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L77-L82)
+
+### 2. 分类画廊：点击图片 or 点击作品名都跳详情页
+
+`components/justified-gallery.tsx` 卡片结构：
+```
+<div flex-col shrink-0 (card) >
+  <Link href={item.href}>    ← 原"点图跳转"入口
+    <PreviewableImg/>
+  </Link>
+  <Link href={item.href}>    ← 2026-08-29 新增：名字独立包一层跳转（inline-block，hover 下划线）
+    <span title>{item.title}</span>
+  </Link>
+</div>
+```
+- 作品区图片和标题两个独立 `<Link>` 互不影响；
+- 标题 hover 时 `underline` 提示可点；标题**横向过长仍不换行**（不做 nowrap/clamp：保持浏览器默认 inline-block 换行，如果被"行高度预算 28px"裁切第 2 行是预期行为 X3）；
+- 垂直方向 row 高度预算从 `titleGap=6 + showTitle=20`（合计 26）提高到 `titleGap=8 + showTitle=28`（合计 36）兜住 `p/y/g` 下延字母。
+
+### 3. 首页（HOME section）灰色蒙版封面背景
+
+`app/page.tsx` `section#home`：
+```
+<section relative overflow-hidden>
+  <div absolute inset-0 bg-cover bg-center url(cover-1.webp)>   ← 方案 Bg + center 聚焦
+  <div absolute inset-0 bg-white/60>                             ← 方案 1a 白蒙 60%
+  <div relative z-10> 标题/副标题/描述 </div>                    ← 内容层抬 z
+  <div relative z-10 sm:absolute bottom-8 right-8> contact 胶囊</div>
+</section>
+```
+- 背景随 section（HOME）滚动（方案 4a），不影响 ABOUT/WORKS；
+- 两个视觉层都是 `pointer-events: none` + `aria-hidden="true"`，不会截获点击/读屏；
+- 背景图允许裁剪（cover 语义），聚焦点 center。
+
+### 4. SideBySideLayout layout="right" 左文右图：图片一定贴容器**右边界**（方案 A2）
+
+旧行为：`justify-content: flex-start` + 文本 `maxWidth:420px` 但实际宽<420 → 文本+图+gap"整体"左对齐，右边界漏出大片空白。
+
+2026-08-29 改法：桌面端 wrapper 的 style 按 `imageSide` 分支
+```
+imageSide === "left"   → marginRight = GAP（整体 flex-start，图贴左，文在右跟）
+imageSide === "right"  → marginLeft = auto（图用 auto margin 吃掉所有剩余空白，贴到最右）
+```
+结果：文本贴父容器左边界，图片贴父容器右边界，两者之间自动留下空白（不再恒定 gap）。`layout="left"` 的左图右文维持原行为不变（向后兼容、零回归面）。
+
+### 5. JustifiedGallery DSL 升级：`LayoutRowSpec = number | {count, widthPercent?}`
+
+为满足"Workshops 2026/2025 单图 50% 宽左对齐"、"Photograph & Videos 2026 三行各 50%"这类"非 100% 行宽"的需求，`layoutByYear` 的每一项从 `number`（按张数分行）升级为**联合类型**：
+
+```ts
+type LayoutRowSpec = number        // 向后兼容：等价于 { count: N, widthPercent: 100 }
+                   | { count: number; widthPercent?: number }; // 1 ≤ widthPercent ≤ 100
+```
+- 当 `widthPercent < 100`：行内 children 宽度总和 = `containerWidth × widthPercent/100 − totalGap`，而行 `<div>` 本身保持 `width:100%`。因为外层 flex 默认 `justify-content: flex-start`，children 窄 → 自然"左对齐、右侧留白"，符合"50% 宽左对齐"语义。
+- 解析函数 `parseLayoutSpec()` 负责 clamps：`count ≥ 1`，`widthPercent ∈ [1,100]`（非法值自动 clamp，不需要使用者手动校验）。
+- 现有历史 `[3,3]` / `[2,1]` 等纯 number 数据 100% 向后兼容，无需批量迁移。
+
+**已使用案例参考：**
+```ts
+// WORKS/Photograph & Videos/2026 → 3 行 × 各 1 张，各 50% 宽
+layoutByYear: { 2026: [ {count:1,widthPercent:50}, {count:1,widthPercent:50}, {count:1,widthPercent:50} ] }
+
+// WORKS/Workshops/2026 → 1 张单图 50% 宽左对齐（2025 同款）
+layoutByYear: { 2026: [ {count:1,widthPercent:50} ] }
+```
+- MultiRowSubPage 同样支持 `widthPercent?: 1~100`（缺省 100），对应 God of Happiness 子页 1：`layout:"multiRow", rows:[[0,1,2]]`（整排 3 图 100% 全宽）/ 子页 2~4：`layout:"multiRow", rows:[[0]]`（单图 100% 全宽，原先 `layout:single` 的 80vh max-height 被移除，实现严格 S1 全宽自适应高度）。
 
 ---
 
@@ -327,28 +442,46 @@ const numStr = `${toRoman(index + 1)}. `;
 | Photograph & Videos | 2026 | 3 | ✅ 全部 | ✅ 全部 |
 | **合计** | | **31** | **31 / 31** | **31 / 31** |
 
-### 本轮完成功能清单（2026-08-28 会话）
+### 本轮完成功能清单（2026-08-29 会话：布局 / 交互 / 字号统一）
 
-- ✅ WORKS 顶层 4 分类卡片切换到 `/images/works/*.jpg`
-- ✅ 所有作品 thumbnail 迁移到 `{slug}/main-1.*` 统一目录
-- ✅ 引入 `cover` 字段 + `covers/` 目录，分类画廊全作品 100% 有封面
-- ✅ JustifiedGallery 同行**内容**等高校准（像素尺寸 + onLoad dims + 归一化 scale）
-- ✅ WORKS 顶层分类标题字号 / 边距 `clamp()` 自适应（桌面随 row.height，移动端随 vw）
-- ✅ Weishan Memory Collage Workshop：HeroImageLayout partial（75% 居中）+ heroLink YouTube + heroCaption
-- ✅ Tree Spirit Ⅰ Ⅱ Ⅲ：主页从 3 张同行 → 单图 wide
-- ✅ The Mountain of Spirits：填材料（Gouache on paper \| 70 × 45 cm \| 2026）+ 描述
-- ✅ 作品详情标题默认去罗马数字前缀（`numStr = ""`）
-- ✅ 全作品详情 `<img>` → `<SafeImg>` 三级容错（原图 → thumbnail → SVG）
-- ✅ R2 ORB / 连接关闭容错：JustifiedGallery fallbackSrc（cover → thumbnail）
-- ✅ 含 URL 主图 hover 灰色蒙版（grayscale + bg-black/45 + blur）+ 中央「Click to redirect to {真实URL}」
-- ✅ Becoming Human 定制附页 `becomingHumanCollage5`（Row1 2 张 / Row2 3 张，同行等高）
-- ✅ 移动端 <768px 响应式全覆盖审查（10 处 isMobile 分支 + 所有交互双端共享）
-- ✅ 文档同步：`WORK_LAYOUT_TEMPLATES.md` 全重写 / `SUBPAGE_TEMPLATES.md` 全重写
-- ✅ README.md（本文件）生成
+**A. 单作品主页模板（layout 调整）**
+- ✅ **Sinking**：`layout: wideBottom → wide → partial`（75% 居中 HeroImageLayout；显式 `images:[main-1]`）
+- ✅ **New Narrative of Foshan**：`layout: right(SideBySide) → partial`（75% 居中 HeroImageLayout；显式 `images:[main-1]`）
+- ✅ CenteredLayout 材料：`sm:text-right` → 永久 `text-left`（保持左基线一致）
+
+**B. 附页布局调整**
+- ✅ **God of Happiness 子页 1**：隐式 GridSubPage（50vh 固定高）→ 显式 `multiRow rows:[[0,1,2]]`（3 图同行 100% 全宽，无 max-height）
+- ✅ **God of Happiness 子页 2/3/4**：`layout:single（80vh 高优先）→ multiRow rows:[[0]]`（严格 S1 全宽，去除 80vh 上限；仅影响 God of Happiness 3 张，未改 SubPageLayout 全局 single 分支）
+- ✅ **FiveImageStackSubPage（Weishan Memory Ⅱ）**：桌面端三列布局重写（D1=Y 整体 justified scale, D2=P1 右列仅对齐右边界, D3=中心图堆叠不动, D4a=中心在上, D5a=不贴容器右边）
+  - 新公式：`sideH_base = (H − gap)/2`、`fit_b = w_LT_b + 2·gap + w_C_b + w_RB_b`、`scale = clamp(0.1, min(1, totalW / fit_b))`
+  - 定位：`leftLeft = 0`、`centerLeft = w_LT + gap`、`rightBottomLeft = centerLeft + w_C + gap`、`rightTopLeft = (rightBottomLeft + w_RB) − w_RT`（P1 保证右上图右 = 右下图右）
+  - 堆叠：中心图 transform 恒为 `none`；四小图 `translate(dx,dy) scale(CENTER_W/imgW, CENTER_H/imgH)` 缩放到中心图 box；堆叠后 z 角图=1、中心=2（中心在上半透）
+
+**C. 分类画廊 DSL & 交互**
+- ✅ **Workshops 2025 / 2026**：`layoutByYear: [1]` → `[{count:1,widthPercent:50}]`（半宽左对齐，同 Photograph & Videos/2026）
+- ✅ `WorkCategory.layoutByYear / getLayoutForYear()` 返回类型升级为 `LayoutRowSpec[]`，新增 `parseLayoutSpec()` 数值边界保护
+- ✅ 分类画廊：点击**作品名**新增独立 `<Link>` 跳转详情页（和原"点图跳转"链路并行，hover 显示 underline）
+- ✅ 分类画廊：标题行高度预算 `showTitle 20 → 28`，`titleGap 6 → 8`（兜住 `leading-tight` 下的 `p/y/g` 下延像素；长标题换行第 2 行仍会因 row 固定高裁切，约定 X3）
+
+**D. 交互 / 视觉类（代码工程化落地）**
+- ✅ **View original image → 全屏灰色 Lightbox 看图**：`LightboxProvider` + `useLightbox`；点击按钮或点击文档流图片打开浮窗；深灰 `rgba(30,30,30,0.88)`，四边留白 40px，点击任何地方（含图片）+ ESC 关闭，body 锁滚动。Provider 仅挂在 WorkDetail（首页/画廊无入口不挂载）。无 heroLink/work.link 时按钮正常，有则主图点击走外链，按钮不渲染。
+- ✅ **HOME 首屏 cover-1.webp 背景 + 白蒙 60%**：`absolute inset-0 bg-cover bg-center` + `bg-white/60`，随 HOME section 一起滚动（方案 4a），不影响 ABOUT/WORKS。
+- ✅ **SideBySideLayout layout="right" 右对齐修正（方案 A2）**：`imageWrapperStyle marginLeft = "auto"`，图贴容器右边界，文本贴左边界。
+
+**E. 字号全局统一（2026-08-29，30/30 处命中，无误伤 caption）**
+- ✅ 标题 `fontFamily: TITLE_FONT, fontSize: 18px → 20px`（5 处）
+- ✅ 材料 `fontFamily: MONO_FONT,  fontSize: 12px → 14px`（5 处）
+- ✅ 描述 `fontFamily: TITLE_FONT, fontSize: 10px → 12px`（20 处，描述 `<p>` 内部一律 `text-left`；caption/nav 10px 未被改动）
+- ✅ 底部导航（画廊年/作品/附页三处 prev-next）`text-[10px] → text-[12px]`
+
+### 数据覆盖率（2026-08-29 快照，31 作品不变）
+
+同 §版本快照（2026-08-28）表：31 件作品 thumbnail & cover 100% 就位；本轮不增不减作品，仅变更 layout 与代码行为。
 
 ### 文档索引
 
-| 文档 | 内容 |
-|---|---|
-| [WORK_LAYOUT_TEMPLATES.md](./WORK_LAYOUT_TEMPLATES.md) | 作品主页 5 模板字段映射、代码位置、SafeImg / heroLink / heroCaption、移动端降级表、全局约定 |
-| [SUBPAGE_TEMPLATES.md](./SUBPAGE_TEMPLATES.md) | 附页 9 通用 + 1 定制模板、cover/thumbnail/part 三路径体系、caption 五层归属表、JustifiedGallery 容错链路、响应式降级+稳定性表 |
+| 文档 | 内容 | 最后修订 |
+|---|---|---|
+| [WORK_LAYOUT_TEMPLATES.md](./WORK_LAYOUT_TEMPLATES.md) | 作品主页 8 旧值→5 统一实现的字段映射、SideBySide A2 右图贴边、partial/wide/bottom 对比表、Centered 材料左对齐、全局字号表 | 2026-08-29 |
+| [SUBPAGE_TEMPLATES.md](./SUBPAGE_TEMPLATES.md) | 附页 9 通用 + 1 定制；FiveImageStack 新公式；God of Happiness 3×single→multiRow 决策；multiRow widthPercent；single/multiRow 选型指南 | 2026-08-29 |
+| `SKILLs/frontend-development/SKILL.md` | 通用前端工程化指南（本项目沉淀的样式规范可扩展） | 2026-08 |

@@ -1,4 +1,4 @@
-# 作品主页（Work.layout）模板使用说明
+# 作品主页（Work.layout）模板使用说明（2026-08-29 修订）
 
 适用于 `lib/works-data.ts` 中每个作品（`Work` 对象）首屏主图布局的 `layout` 字段。代码统一实现在 `components/work-detail.tsx` 内，由 `WorkDetail` 函数按 `work.layout` 值分发到 **5 个统一组件**。
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 一、Work 数据结构（主页相关字段 · 2026-08-28 快照）
+## 一、Work 数据结构（主页相关字段 · 2026-08-29 快照）
 
 ```ts
 import type { Work } from "@/lib/works-data";
@@ -27,19 +27,23 @@ const work: Work = {
   layout: "partial",                             // 8 选 1，见下文总览
   imgWidthRatio: 0.75,                           // wide / partial / bottom / wideBottom：图片宽度占比（0~1）
   gridColumns: 2,                                // 仅 layout="grid"：≥768px 固定列数（不填则响应式 sm=2/lg=3）
+  images: [                                      // HeroImageLayout 多图 / 显式指定单图（partial 建议填此项避免 fallback）
+    { src: `${R2}/images/.../main-1.jpg`, alt: "Main 1" },
+  ],
 
-  // —— 文本内容 ——
-  materials: "Acrylic on canvas | 70cm × 45cm | 2026",// 媒介｜尺寸｜年份
-  description: "Long description text...",        // 描述，空行 \n 或 \n\n 分段
+  // —— 文本内容（2026-08-29 字号固化，见 README"全局字号对照表"）
+  materials: "Acrylic on canvas | 70cm × 45cm | 2026",// 媒介｜尺寸｜年份 （MONO_FONT 14px）
+  description: "Long description text...",        // 描述，空行 \n 或 \n\n 分段 （TITLE_FONT 12px，text-left 永久）
 
-  // —— 主图交互（2026-08-28 新增，全 layout 通用）——
+  // —— 主图交互（全 layout 通用）
   heroLink: "https://youtu.be/xxxx",              // 主图点击→新标签页外链（优先于老字段 work.link）
-  heroCaption: "A video documenting the process",// 主图正下方 caption（mt-2 10px opacity-0.5 text-center）
+  heroCaption: "A video documenting the process",// 主图正下方 caption（10px opacity-0.5 text-center；不受 12px 描述字号影响）
   link: "https://optional.legacy",                // 老字段：heroLink 没填时退而用之
+  // ⚠️ 当 heroLink ?? link 存在时，"View original image" 按钮 & 全屏 Lightbox 不出现（主图跳转语义优先）
 
   // —— GridLayout / HeroImageMultiRow 多图 ——
-  images: [{ src: "part-1.jpg", alt: "Part 1", caption: "Ⅰ" }],
-
+  //    （如果 images[0] 是主页第一张主图，仍可写 caption / heroCaption 给它）
+  //
   // —— 附页（见 SUBPAGE_TEMPLATES.md）——
   subPages: [{ layout: "multiRow", rows: [[0,1],[2,3]], images: [...] }],
 };
@@ -51,7 +55,7 @@ import { R2 } from "@/lib/works-data";
 // R2 = "https://pub-0152450371c44ecb87bb433ea94e2039.r2.dev"
 ```
 
-> **⚠️ 编号（罗马数字前缀）默认关闭**：从 2026-08-28 起，`WorkDetail` 的 `numStr` 统一设为空串。所有作品标题不会再显示 `「I. Title / IX. Title」` 前缀。如需重新启用，仅修改 `WorkDetail` 里 `const numStr = "";` 一行即可。
+> **⚠️ 编号（罗马数字前缀）默认关闭**：`WorkDetail` 的 `numStr` 统一设为空串。所有作品标题不会再显示 `「I. Title / IX. Title」` 前缀。如需重新启用，仅修改 `WorkDetail` 里 `const numStr = "";` 一行即可。
 
 ---
 
@@ -59,11 +63,11 @@ import { R2 } from "@/lib/works-data";
 
 | `work.layout` 旧值       | 对应内部统一组件        | 核心效果                                                                 | 额外配置项                          |
 | ------------------------ | ----------------------- | ------------------------------------------------------------------------ | ----------------------------------- |
-| `"left"`                 | `SideBySideLayout`      | **左右并排**：图片在**左**，文本在**右**                                 | 无                                  |
-| `"right"`                | `SideBySideLayout`      | **左右并排**：图片在**右**，文本在**左**；**未写 layout 时的默认值**     | 无                                  |
-| `"center"`               | `CenteredLayout`        | **居中单图**：图片水平居中，两侧留白相等，文本在**右**侧栏               | 无                                  |
-| `"wide"`                 | `HeroImageLayout`       | **顶图模板**：图片顶满整行宽（`imgWidthRatio` 100%），紧贴标题行下方     | `imgWidthRatio`（wide 强制 1.0）   |
-| `"partial"`              | `HeroImageLayout`       | **顶图模板**：图片占一行的 75%（或自定义比例），居中                     | `imgWidthRatio`（默认 0.75）        |
+| `"left"`                 | `SideBySideLayout`      | **左右并排**：图片在**左**，文本在**右**；整体 `flex-start`（图贴左，文跟图）| 无                                  |
+| `"right"`                | `SideBySideLayout`      | **左右并排**：图片在**右**，文本在**左**；⚠️ **2026-08-29 A2 修正**：`imageWrapperStyle.marginLeft = "auto"` → 图片**贴父容器右边界**，文本贴父容器左边界（不再恒定 24px 居中空白）| 无                                  |
+| `"center"`               | `CenteredLayout`        | **居中单图**：图片水平居中，两侧留白相等；⚠️ **2026-08-29**：材料 `sm:text-right → 永久 text-left`（标题/材料/描述左基线一致） | 无                                  |
+| `"wide"`                 | `HeroImageLayout`       | **顶图模板**：图片顶满整行宽（`imgWidthRatio` 强制 100%），紧贴标题行下方     | `imgWidthRatio`（wide 强制 1.0）   |
+| `"partial"`              | `HeroImageLayout`       | **顶图模板**：图片占一行的 75%（或自定义比例），居中 ⭐ **2026-08-29 新增使用：Sinking / New Narrative of Foshan**（从 SideBySide / wide 切换过来） | `imgWidthRatio`（默认 0.75）；**推荐同时显式写 `images:[{src:thumbnail}]` 防止 fallback**        |
 | `"bottom"`               | `HeroImageBottomLayout` | **上图下文本**：图片放 min-height 60vh 居中区域，比例默认 75%            | `imgWidthRatio`（默认 0.75）        |
 | `"wideBottom"`           | `HeroImageBottomLayout` | **上图下文本**：图片放 min-height 60vh 居中区域，顶满 100%               | `imgWidthRatio`（wideBottom 强制1.0）|
 | `"grid"`                 | `GridLayout`            | **多图网格**：首屏显示 `work.images[]` 所有图                           | `images` 必填；`gridColumns` 可选   |
@@ -81,20 +85,26 @@ import { R2 } from "@/lib/works-data";
 | `"left"`        | 左，文在右    |
 | `"right"` / 默认 | 右，文在左  |
 
-**结构特点：**
-- 图片侧 `flexShrink: 0`（先保证图片宽度，不够时文本面板先收缩换行）；
-- 文本面板最大宽 `LEFT_MAX_WIDTH`，材料 12px mono **左对齐**，描述 10px serif；
-- 桌面端图片高度 `IMAGE_HEIGHT = 80vh`，移动端 maxHeight `70vh`、`width:100%`，文本堆叠在图片下方；
-- 若有 `heroLink` → 主图外包 `<a target=_blank>`，hover 出现灰色蒙版 + 中央「Click to redirect to {真实URL}」；
-- 若有 `heroCaption` → 主图正下方 caption（mt-2 / 10px / opacity 0.5 / text-center）。
+**结构特点（含 2026-08-29 行为修正）：**
+- 外层桌面端 flex 容器：`justify-content: flex-start; width:100%`（**不再加 `justify-between` 或 `margin` 在容器层**）。
+- 图片侧 style（`imageWrapperStyle`）**按 imageSide 分支**：
+  ```
+  imageSide === "left"  → flexShrink:0; marginRight = GAP(24)；
+  imageSide === "right" → flexShrink:0; marginLeft = "auto";   // ← 2026-08-29 A2 修正
+  ```
+  - `"right"` 用 `marginLeft: auto` 吃掉所有剩余宽：**图片一定贴到父容器右边界**；文本贴父容器左边界；两者之间的空白 = 容器总宽 − 文本实际宽 − 图片实际宽（不再恒定 GAP）。
+  - `"left"` 保持向后兼容：图贴左，文本面板在右跟（图右 margin 24）。
+- 图片 `IMAGE_HEIGHT = 80vh`（桌面），移动端 `maxHeight 70vh` + `width:100%`，文本堆叠在图片下方；
+- 文本面板最大宽 `LEFT_MAX_WIDTH = 420px`；标题 TITLE_FONT 20px；材料 MONO_FONT 14px；描述 TITLE_FONT 12px text-left；
+- 若有 `heroLink` → 主图外包 `<a target=_blank>`，hover 灰色蒙版 + 中央跳转说明；若 `heroLink ?? link` 存在 → "View original image" 按钮 & Lightbox 不出现；
+- 若有 `heroCaption` → 主图正下方 10px opacity 0.5 text-center。
 
 ```
-layout = "right"：
-┌──────────────────────────────┐ GAP24 ┌───────────┐
-│ Title / Materials / Desc.    │       │  (heroLink)│
-│ (max 420px, 全部左对齐)      │       │  Image    │← 80vh, flexShrink:0
-└──────────────────────────────┘       └───────────┘
-                                       [heroCaption 10px 0.5]
+layout = "right"（A2 修正后效果）：
+┌─────────────────────────────────────────────────────────────────────┐
+│ Title / Materials / Desc.（左贴） │     ←      │ Image（右贴容器边界）│
+│ 420px 面板内左对齐                 │  ← 空白区→ │ 80vh · flexShrink:0│
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 示例写法：
@@ -104,14 +114,12 @@ layout = "right"：
   title: "Verdant Heaven",
   thumbnail: `${R2}/images/paintings-2024/verdant-heaven/main-1.jpg`,
   aspectRatio: 1.45,
-  layout: "right",
-  heroLink: "https://optional",
-  heroCaption: "optional caption under hero",
+  layout: "right",                      // ← 图贴右边界，文贴左
   materials: "Acrylic on canvas, ink, ballpoint pen | 40×55cm | 2024",
   description: "Combining traditional Shan Shui...\n\nVisual memories...",
 }
 ```
-代码：[work-detail.tsx → `SideBySideLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2969-L3125)
+代码：[work-detail.tsx → `SideBySideLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2969-L3162)
 
 ---
 
@@ -121,59 +129,69 @@ layout = "right"：
 
 **结构特点：**
 - 通过 `ResizeObserver` 测量图片与容器宽 → 两侧 `panelWidth = (containerW − imageW) / 2 − GAP` 绝对相等；
-- 标题 18px serif，材料 12px mono **右对齐**，描述 10px serif；
-- 桌面端图片 80vh 原比例 → 移动端 width:100% maxHeight 70vh，文本前置（先文字后图片）。
-- `heroLink` / `heroCaption` 机制和 SideBySideLayout 完全一致（`wrapHeroImgWithLink`）。
+- 标题 TITLE_FONT 20px；材料 MONO_FONT 14px ⚠️ **2026-08-29：材料从原 sm:text-right → 永久 `text-left`**（与标题/描述的左基线一致）；描述 TITLE_FONT 12px text-left；
+- 桌面端图片 80vh 原比例 → 移动端 width:100% maxHeight 70vh，文本前置；
+- `heroLink` / `heroCaption` 机制和 SideBySideLayout 完全一致。
 
-代码：[work-detail.tsx → `CenteredLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2710-L2912)
+代码：[work-detail.tsx → `CenteredLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2710-L2934)
 
 ---
 
 ### 3. `HeroImageLayout`（顶图模板，对应 `layout: "wide"` 和 `layout: "partial"`）⭐
 
-**适用场景：** 标题+材料在上，主图紧跟其后居中，再挂描述；**不设 min-height**（短图不会撑大片空白）。
+**适用场景：** 标题+材料在上，主图紧跟其后居中，再挂描述；**不设 min-height**（短图不会撑大片空白）。⚠️ **这是 2026-08-29 切换模板最多的布局**。
 
-| layout 值   | `imageWidthPercent`（图片占容器宽度比例）|
-|------------|------------------------------------------|
-| `"wide"`   | 强制 100%                                 |
-| `"partial"`| 默认 75%，可通过 `imgWidthRatio` 改       |
+| layout 值   | `imageWidthPercent`（图片占容器宽度比例）| 代表作品 |
+|------------|------------------------------------------|---|
+| `"wide"`   | 强制 100%                                 | Tree Spirit ⅠⅡⅢ（从 3 张同行 wide 切单图） |
+| `"partial"`| 默认 75%，可通过 `imgWidthRatio` 改       | **Sinking（wideBottom→wide→partial）**、**New Narrative of Foshan（SideBySide→partial）** |
 
 **结构特点（单图 vs 多图自动分流）：**
-- **单图模式**（无 `work.images` 或长度 ≤1）：主图是 `work.thumbnail`，**锚点 `<a>` 自身就是 width N% 的含宽块**（避免 inline-block shrink-to-fit 打断百分比宽度链路），`heroCaption` 在锚点下居中。
-- **多图模式**（`work.images.length ≥ 2`）：委托给 `HeroImageMultiRow` → 同行严格等高，真实 dims 比例分配宽度 + 归一化 scale（Σwidth = 目标宽，防浮点溢出横向滚动）。
-- 描述：`flex justify-center` 外层居中，内层 `<div width = imageWidthPercent%> + text-left`（描述块水平居中，文本左对齐）。
-- 有链接时 hover 蒙版 + grayscale 200ms 过渡淡入。
+- **单图模式**（`work.images.length ≤ 1`）：主图 = `images[0] ?? thumbnail`；**锚点 `<a>` 自身就是 width N% 的含宽块**，`heroCaption` 在锚点下居中；
+- **多图模式**（`work.images.length ≥ 2`）：委托给 `HeroImageMultiRow` 同行等高；
+- 标题行 + 描述块 **统一用同一 `imageWidthPercent%` 宽度的"居中 wrapper"**：
+  ```
+  outer: flex justify-center
+    inner w-full style.width = (imageWidthPercent × 100)%
+      ├─ h1       text-left / serif 20px / 左边界 = 图片左边框
+      └─ material sm:text-right / mono 14px / 右边界 = 图片右边框
+    inner + image anchor（同样 imageWidthPercent%）
+    inner + description p text-left（描述块左边界=图片左边界）
+  ```
+  这样"标题+材料"的整体宽度、图片宽度、描述宽度三者**左/右边缘严格重合**（2026-08 初统一）。
+- 有 heroLink/link：hover 灰色蒙版 + grayscale 200ms 过渡；无 heroLink/link → "View original image" 按钮 + 全屏 Lightbox 浮窗（见 README 交互机制 §1）。
 
 ```
 layout = "partial" (imgWidthRatio = 0.75)：
 ┌──────────────────────────────────────────┐
-│ Title (left, serif)   Materials (mono, R)│
+│ Title (left, 20px serif)   Materials (14px mono, right)│ ← 宽度 = 75%
 ├──────────────────────────────────────────┤
-│          ┌────────────────────┐          │ ← 75% 宽锚点
-│          │  ┌──────────────┐  │          │ ← <a> 或 <div> + overlay
-│          │  │ Image graysc │  │          │ ← hover: 灰色蒙版 + 居中「Click to redirect to URL」
+│          ┌────────────────────┐          │ ← 75% 宽锚点（<a> 或 <div>）
+│          │  ┌──────────────┐  │          │ ← hover: 灰色蒙版 + 跳转/View original
+│          │  │ Image graysc │  │          │
 │          │  └──────────────┘  │          │
 │          └────────────────────┘          │
 │          heroCaption: 10px 0.5 (center)   │
 │          ┌────────────────────┐          │
-│          │ Description (75% W)│          │ ← 块居中、文字左对齐
+│          │ Description (12px TITLE_FONT, text-left)│ ← 块居中、75% 宽，文字左对齐
 │          └────────────────────┘          │
 ```
 
-示例（HeroImageMultiRow wide：Becoming Human Ⅰ Ⅱ Ⅲ 三主图同行等高）：
+示例（Sinking 切到 partial 的写法，显式 images=[main-1] 防止 HeroImageRow 退回 thumbnail 分支带来的首屏抖动）：
 ```ts
 {
-  slug: "becoming-human",
-  title: "Becoming Human Ⅰ Ⅱ Ⅲ",
-  layout: "wide",
-  thumbnail: `${R2}/images/paintings-2025/becoming-human/main-1.jpg`, // 用于分类画廊 / SafeImg fallback
-  images: [
-    { src: `${R2}/.../main-1.jpg`, caption: "Ⅰ" },
-    { src: `${R2}/.../main-2.jpg`, caption: "Ⅱ" },
-    { src: `${R2}/.../main-3.jpg`, caption: "Ⅲ" },
-  ],
-  materials: "Natural pigments... | 25×27cm | 2025",
-  description: "Mountains, rivers, and stars...",
+  slug: "sinking",
+  title: "Sinking",
+  thumbnail: `${R2}/images/paintings-2025/sinking/main-1.jpg`,
+  cover: `${R2}/images/paintings-2025/covers/sinking.jpg`,
+  aspectRatio: 1.2281,
+  layout: "partial",                 // ← 2026-08-29 wide → partial
+  images: [{                          // ← 2026-08-29 新增：显式主图
+    src: `${R2}/images/paintings-2025/sinking/main-1.jpg`,
+    alt: "Sinking",
+  }],
+  materials: "quartz sand, acrylic, ink, chalk, gauze, ballpoint pen, plaster mixed media on oil canvas | 40cm × 60cm, 2025",
+  description: "...",
 }
 ```
 代码：
@@ -192,7 +210,9 @@ layout = "partial" (imgWidthRatio = 0.75)：
 | `"wideBottom"` | 100%    |
 | `"bottom"`     | 默认 75%，可改 `imgWidthRatio` |
 
-**和 HeroImageLayout 的唯一区别**：`areaStyle = { minHeight: "60vh", marginTop: "16px", justifyContent: "center", alignItems: "flex-start" }` → 主图在 60vh 区域内**顶中对齐**，描述则远在 60vh 区域之后。多图 / 单图、hover 蒙版、heroCaption、描述块对齐全部复用 HeroImageLayout。
+**和 HeroImageLayout 的唯一区别**：`areaStyle = { minHeight: "60vh", marginTop: "16px", justifyContent: "center", alignItems: "flex-start" }` → 主图在 60vh 区域内**顶中对齐**，描述远在 60vh 区域之后。多图 / 单图、hover 蒙版、标题行+描述 wrapper 宽度对齐、heroCaption、Lightbox 规则全部复用 HeroImageLayout。
+
+> 何时避免用 wideBottom / bottom？当主图 aspectRatio 偏小（横图但高度短），60vh 固定容器会让图片上方大片留白时，优先改到 `wide / partial`（参考 2026-08-28 Sinking 从 wideBottom → wide → partial 的切换路径）。
 
 代码：[work-detail.tsx → `HeroImageBottomLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2596-L2664)
 
@@ -216,7 +236,7 @@ sm+ ≥768px
   └─ 未填（默认）    → sm:grid-cols-2 / lg:grid-cols-3
 ```
 
-**每图结构（2026-08 已从 hover 蒙版改为永久图底 caption）：**
+**每图结构（永久图底 caption）：**
 ```
 <div class="flex flex-col items-center w-full">
   <div class="w-full">                         ← 图框
@@ -225,6 +245,7 @@ sm+ ≥768px
   <p class="mt-2 w-full text-center 10px opacity-0.5">Caption（例如 Ⅰ~Ⅹ 罗马数字）</p>
 </div>
 ```
+⚠️ 2026-08-29 修正：GridLayout 主描述段落 `<p>` **一律 `text-left`**（原 `sm:text-center` 在桌面下导致居中偏移，和 Hero/Centered 描述基线不一致，已移除）。
 
 示例（A Joke on Fragmented Shan Shui：固定 2 列 × 10 行，Roman 数字每格 caption）：
 ```ts
@@ -243,21 +264,39 @@ sm+ ≥768px
   ],
 }
 ```
-代码：[work-detail.tsx → `GridLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2666-L2780)
+代码：[work-detail.tsx → `GridLayout`](file:///d:/Trae_Code/Project/DengManyuan_PersonalWeb/components/work-detail.tsx#L2666-L2801)
 
 ---
 
-## 四、通用机制（所有 layout 共享，2026-08-28 强化）
+## 四、通用机制（所有 layout 共享 · 2026-08-29 修订）
 
-### 4.1 SafeImg 三级容错（防 R2 ORB / 404 / 连接关闭）
+### 4.1 字号与对齐（全局固化，改一处即可）
+见 README「移动端规范 → 全局字号对照表」。记住：
+- 标题 = **20px（TITLE_FONT italic serif）**；材料 = **14px（MONO_FONT）**；描述 = **12px（TITLE_FONT serif text-left）**。
+- Caption / heroCaption / SafeImg 图下小字 = **10px（sans，opacity 0.5，永不改）**。
+- 底部 prev/next 导航 = **12px**（2026-08-29 统一自 10px）。
+
+### 4.2 Hero* 标题-材料 wrapper 宽度同步
+HeroImageLayout / HeroImageBottomLayout 的"标题行"和"描述块"、和"图像锚点"**共用同一个 imageWidthPercent 的外层 flex justify-center 容器**。这是保证：
+- h1 左边缘 = 图像左边缘；
+- 材料右边缘 = 图像右边缘；
+- 描述宽度 = 图像宽度；
+三对齐的关键。如果新增 Hero 变体，**不要在标题行单独写 `w-full + justify-between`**（这是已踩过的坑）。
+
+### 4.3 SafeImg 三级容错（防 R2 ORB / 404 / 连接关闭）
 ```
 阶段 0：原始 src (main-1 / part-N)
    │ onError
    ▼
-阶段 1：work.thumbnail（每个作品都有，一定是 main-1.*）
+阶段 1：work.thumbnail
    │ onError
    ▼
-阶段 2：内联 data-URI 16×16 浅灰 SVG（object-fit: cover → 撑满格，不塌陷）
+阶段 2：内联 data-URI SVG
+```
+作品详情所有 img 都包 SafeImg；PreviewableImg 在预览→原图阶段也用 SafeImg 两层容器，404/ORB 不影响 inline crossfade & Lightbox。
+
+### 4.4 Preview → 原图 + 全屏 Lightbox（无 heroLink/link 时）
+见 README「交互与体验机制 §1」。关键：Provider 仅挂在 `WorkDetail`，所以首页/画廊不会出现 z-index 9999 的遮罩（作用域最小化）。
 ```
 组件：`components/work-detail.tsx → SafeImg`（L29-L78）。所有作品主页 + 所有附页图片渲染统一走 `<SafeImg>`，不再直接 `<img>`。
 
