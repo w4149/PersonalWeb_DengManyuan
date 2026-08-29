@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
+import type { LayoutRowSpec } from "@/lib/works-data";
 import { GAP } from "@/lib/gallery-config";
 import { PreviewableImg } from "@/components/previewable-image";
 
@@ -21,7 +22,13 @@ export type GalleryItem = {
 type Props = {
   items: GalleryItem[];
   columns?: { base?: number; sm?: number; md?: number; lg?: number };
-  layout?: number[];
+  /**
+   * 手工布局：每行一条记录
+   *   - number 简写：n 张图，默认 100% 宽填充满（向后兼容）
+   *   - {count: n, widthPercent?: 1..100}：n 张图在一行，行内容按 widthPercent% 容器宽计算
+   *     （widthPercent 省略时默认 100%）；当 widthPercent<100 时行内容左对齐。
+   */
+  layout?: LayoutRowSpec[];
   minHeight?: number;
   maxHeight?: number;
   gap?: number;
@@ -30,6 +37,17 @@ type Props = {
 };
 
 type ImgDims = { w: number; h: number };
+
+/**
+ * 将 LayoutRowSpec 条目解析为结构化 {count, widthPercent}
+ */
+function parseLayoutSpec(spec: LayoutRowSpec): { count: number; widthPercent: number } {
+  if (typeof spec === "number") {
+    return { count: spec, widthPercent: 100 };
+  }
+  const pct = spec.widthPercent == null ? 100 : Math.max(1, Math.min(100, spec.widthPercent));
+  return { count: Math.max(1, spec.count), widthPercent: pct };
+}
 
 export function JustifiedGallery({
   items,
@@ -113,24 +131,32 @@ export function JustifiedGallery({
   }, [items]);
 
   const rowGroups = useMemo(() => {
+    type RowGroup = { items: GalleryItem[]; widthPercent: number };
     if (layout && layout.length > 0) {
-      const groups: GalleryItem[][] = [];
+      const specs = layout.map(parseLayoutSpec);
+      const groups: RowGroup[] = [];
       let idx = 0;
-      for (const count of layout) {
-        groups.push(items.slice(idx, idx + count));
-        idx += count;
+      for (const spec of specs) {
+        const slice = items.slice(idx, idx + spec.count);
+        groups.push({ items: slice, widthPercent: spec.widthPercent });
+        idx += spec.count;
       }
       if (idx < items.length) {
         const remaining = items.slice(idx);
-        const lastGroup = groups[groups.length - 1] || [];
-        groups[groups.length - 1] = [...lastGroup, ...remaining];
+        const last = groups[groups.length - 1];
+        if (last) {
+          groups[groups.length - 1] = {
+            items: [...last.items, ...remaining],
+            widthPercent: last.widthPercent,
+          };
+        }
       }
       return groups;
     }
     const perRow = currentCols;
-    const groups: GalleryItem[][] = [];
+    const groups: RowGroup[] = [];
     for (let i = 0; i < items.length; i += perRow) {
-      groups.push(items.slice(i, i + perRow));
+      groups.push({ items: items.slice(i, i + perRow), widthPercent: 100 });
     }
     return groups;
   }, [items, layout, currentCols]);
@@ -142,9 +168,13 @@ export function JustifiedGallery({
 
     let globalIdx = 0;
     for (const group of rowGroups) {
-      const n = group.length;
+      const n = group.items.length;
       const totalGap = (n - 1) * gap;
-      const availableWidth = containerWidth - totalGap;
+      // 行的目标总宽（含 gap）= 容器宽度 × widthPercent / 100
+      // 当 widthPercent < 100 时，行内容不满整宽，由于外层行容器 width:100% 且 flex justify-start 默认左对齐，
+      // 实现了视觉上"左对齐、总宽按百分比"。
+      const targetRowWidth = (containerWidth * group.widthPercent) / 100;
+      const availableWidth = Math.max(0, targetRowWidth - totalGap);
 
       // 每个图用真实 dims，没有则降级到 item.aspectRatio
       const ratios: number[] = [];
@@ -158,7 +188,7 @@ export function JustifiedGallery({
           r = d.w / d.h;
         } else {
           allReady = false;
-          r = group[k].aspectRatio;
+          r = group.items[k].aspectRatio;
         }
         ratios.push(r);
         sumR += r;
@@ -177,7 +207,7 @@ export function JustifiedGallery({
       }
       void allReady; // 暂不区分是否就绪，首屏用降级 aspectRatio，图片加载完 dims 触发 useMemo 重新精确计算一次
 
-      result.push({ items: group, height, widths });
+      result.push({ items: group.items, height, widths });
       globalIdx += n;
     }
     return result;
@@ -259,12 +289,17 @@ export function JustifiedGallery({
                     />
                   </Link>
                   {showTitle && (
-                    <span
-                      className="text-sm text-gray-700 text-center mt-2 leading-tight"
+                    <Link
+                      href={item.href}
+                      className="inline-block no-underline hover:underline mt-2"
                       style={{ maxWidth: width }}
                     >
-                      {item.displayTitle || item.title}
-                    </span>
+                      <span
+                        className="text-sm text-gray-700 text-center leading-tight"
+                      >
+                        {item.displayTitle || item.title}
+                      </span>
+                    </Link>
                   )}
                 </div>
               );

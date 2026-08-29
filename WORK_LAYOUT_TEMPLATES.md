@@ -29,7 +29,7 @@ const work: Work = {
   gridColumns: 2,                                // 仅 layout="grid"：≥768px 固定列数（不填则响应式 sm=2/lg=3）
 
   // —— 文本内容 ——
-  materials: "Acrylic on canvas | 70×45cm | 2026",// 媒介｜尺寸｜年份
+  materials: "Acrylic on canvas | 70cm × 45cm | 2026",// 媒介｜尺寸｜年份
   description: "Long description text...",        // 描述，空行 \n 或 \n\n 分段
 
   // —— 主图交互（2026-08-28 新增，全 layout 通用）——

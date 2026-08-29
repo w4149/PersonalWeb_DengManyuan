@@ -93,6 +93,13 @@ export type Work = {
   heroCaption?: string;
 };
 
+/**
+ * 分类年份画廊行布局条目：
+ *   - number 简写：等价于 { count: n, widthPercent: 100 }
+ *   - 对象形式：count = 本行几张图，widthPercent（1-100，默认 100）= 行内容占容器宽度百分比
+ */
+export type LayoutRowSpec = number | { count: number; widthPercent?: number };
+
 export type WorkCategory = {
   slug: string;
   title: string;
@@ -100,7 +107,7 @@ export type WorkCategory = {
   coverAspectRatio: number;
   years: number[];
   worksByYear?: Record<number, Work[]>;
-  layoutByYear?: Record<number, number[]>;
+  layoutByYear?: Record<number, LayoutRowSpec[]>;
 };
 
 const R2 = "https://pub-0152450371c44ecb87bb433ea94e2039.r2.dev";
@@ -128,7 +135,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2026/tree-pulse/main-1.jpg`,
           cover: `${R2}/images/paintings-2026/covers/tree-pulse.jpg`,
           aspectRatio: 0.7908,
-          materials: "acrylic painting on paper, 27×35cm, 2026",
+          materials: "acrylic painting on paper | 27cm × 35cm, 2026",
           layout: "left",
           description:
             "This work depicts the internal structure of a tree, focusing on its growth, and energy flow. Moving beyond external morphology, the painting seeks to enter the tree's inner vital processes, exploring the possibility of shared embodiment—a mutual life rhythm between humans and trees.",
@@ -140,7 +147,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2026/world-tree/main-1.jpg`,
           cover: `${R2}/images/paintings-2026/covers/world-tree.jpg`,
           aspectRatio: 0.5771,
-          materials: "acrylic painting on canvas, 60×100cm, 2026",
+          materials: "acrylic painting on canvas | 60cm × 100cm, 2026",
           layout: "center",
           description:
             "The World Tree stands as a cosmic axis connecting heaven and earth, its branches reaching into the spiritual realm while its roots grip the material world. Birds nest in its crown, symbolizing the communion between the mortal and the divine—a living bridge between worlds.",
@@ -152,7 +159,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2026/becoming-mountain/main-1.jpg`,
           cover: `${R2}/images/paintings-2026/covers/becoming-mountain.jpg`,
           aspectRatio: 0.6371,
-          materials: "Chinese pigment, pencil on paper, 43×76cm, 2026",
+          materials: "Chinese pigment, pencil on paper | 43cm × 76cm, 2026",
           layout: "left",
           description:
             "Through this work, Memory-Shan Shui evolves into a practice of shared embodiment. The mountain becomes Buddha, and Buddha becomes the mountain. Humans exist within this continuous transformation, sharing sensations of suffering and memories with all forms of being.",
@@ -164,7 +171,7 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2026/worlding/main-1.jpg`,
           cover: `${R2}/images/paintings-2026/covers/worlding.jpg`,
           aspectRatio: 1.8887,
-          materials: "Chinese pigment on paper, 68×33.5cm, 2026",
+          materials: "Chinese pigment on paper | 68cm × 33.5cm, 2026",
           layout: "wide",
           description:
             "Integrating explorations of the body, forest, mythology, and Shan Shui, the work brings diverse forms of life into a continuously emerging relational space. Gods, humans, and landscapes are no longer separate entities but mutually permeating forms of existence, challenging the conventional boundary between subject and object.",
@@ -178,7 +185,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.3517,
           layout: "partial",
           imgWidthRatio: 0.75,
-          materials: "Gouache on paper | 70 × 45 cm | 2026",
+          materials: "Gouache on paper | 70cm × 45cm, 2026",
           description:
             "It imagines the mountain as a living entity where memories, spirits, and more-than-human forces continuously emerge and transform. Rather than depicting a geographical landscape, the work constructs a mythological ecology inspired by the cosmological imagination of Shan Shui.",
         },
@@ -195,7 +202,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.0336,
           layout: "grid",
           gridColumns: 2,
-          materials: "Ink and Chinese pigments on canvas | Ø 20 cm | 2025",
+          materials: "Ink and Chinese pigments on canvas | Ø 20 cm, 2025",
           description:
             "I deconstruct and reassemble classical Shan Shui imagery, combining it with contemporary visual language to reinterpret\ntradition through a playful approach. Rather than reproducing\ntraditional Shan Shui, the work understands it as an open\nmethodology—one that can continuously transform, grow, and\nrespond to contemporary experience.",
           images: Array.from({ length: 10 }, (_, i) => {
@@ -217,7 +224,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.0078,
           layout: "wide",
           materials:
-            "Natural pigments, ink, colored pencil on rice paper | 25×27 cm | 2025",
+            "Natural pigments, ink, colored pencil on rice paper | 25cm × 27cm, 2025",
           description:
             "Mountains, rivers, and stars become the eyes; bouquets transform into metaphors of human life; and nature and the universe are\nembodied as forms of the body. Through the body, the works seek to reconsider the fluid and mutually generative relationship\nbetween humans and the world, transforming Shan Shui into an open structure that connects lived experience, natural processes, and cosmic perception.",
           images: [
@@ -267,7 +274,7 @@ export const workCategories: WorkCategory[] = [
           cover: `${R2}/images/paintings-2025/covers/floating.jpg`,
           aspectRatio: 0.692,
           layout: "left",
-          materials: "acrylic paint, pencil and crayon on paper, 21 x 30 cm, 2025",
+          materials: "acrylic paint, pencil and crayon on paper | 21 x 30 cm, 2025",
         },
         {
           slug: "maternity-myth",
@@ -278,7 +285,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.2081,
           layout: "partial",
           imgWidthRatio: 0.75,
-          materials: "oil painting on wood panel, 50 x 60 cm, 2025",
+          materials: "oil painting on wood panel | 50cm × 60cm, 2025",
           description:
             "During my residency in Foshan, I conducted research on local myths and legends and learned about a distinctive female deity tradition in the Xijiang River basin of Guangdong—the worship of the Dragon Mother. Within this belief system, the Dragon Mother is regarded as the sovereign of the waters and a goddess of fertility and protection, embodying a dual role as both a maternal deity and a local guardian spirit. What moved me most was the story of the Dragon Mother originally being a mortal woman who accidentally found a dragon egg and hatched five baby dragons with her own hands. In this work, I imaginatively reconstruct this specific memory to highlight the water-spirit qualities and vital force embodied in her feminine divine power.",
         },
@@ -291,7 +298,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.011,
           layout: "partial",
           imgWidthRatio: 0.75,
-          materials: "50 x 50 cm | mulberry paper mounted on wooden panel, Chinese pigments, ink, silver leaf | 2025",
+          materials: "mulberry paper mounted on wooden panel, Chinese pigments, ink, silver leaf | 50cm × 50cm, 2025",
           description:
             "The work centres on the \"rocks\" and \"trees\" of traditional Shan Shui, reinterpreting Taihu rocks and trees as symbols of personal lived experience. Rocks become metaphors for the body and identity, while trees intertwine, grow, and evolve with inner experience to form a continuously changing living system. The work further explores how natural elements in Shan Shui can act as mediators between humans and the world, developing artistic approaches to co-generating relationships with more-than-human beings.",
         },
@@ -304,6 +311,8 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.0044,
           layout: "partial",
           imgWidthRatio: 0.75,
+          materials:
+            "mulberry paper mounted on wooden panel, Chinese pigments, ink | 50cm × 50cm, 2025",
         },
         {
           slug: "sinking",
@@ -312,8 +321,8 @@ export const workCategories: WorkCategory[] = [
           thumbnail: `${R2}/images/paintings-2025/sinking/main-1.jpg`,
           cover: `${R2}/images/paintings-2025/covers/sinking.jpg`,
           aspectRatio: 1.2281,
-          layout: "wideBottom",
-          materials: "quartz sand, acrylic, ink, chalk, gauze, ballpoint pen, plaster mixed media on oil canvas, 40 x 60 cm, 2025",
+          layout: "wide",
+          materials: "quartz sand, acrylic, ink, chalk, gauze, ballpoint pen, plaster mixed media on oil canvas | 40cm × 60cm, 2025",
         },
         {
           slug: "tree-spirit",
@@ -325,9 +334,9 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 2.2215,
           layout: "wide",
           materials:
-            "Hemp paper, oil painting frame, traditional\nChinese pigments, gold lacquer, resin mixed\nmedia | 30 x 40 cm | 2025",
+            "Hemp paper, oil painting frame, traditional\nChinese pigments, gold lacquer, resin mixed\nmedia | 30cm × 40cm, 2025",
           description:
-            "Created during an artist residency in Huzhou, Zhejiang, this work\ntakes local trees as its starting point, reconnecting local ecology\nwith Chinese mythology. The trees are reimagined as ancient\nsacred beings, while ten suns construct an ecological space\nbeyond linear time. | | By bringing together place-based experience, mythological memory, and ecological observation, the work explores painting as a practice of\nlearning with place and co-producing knowledge, extending Memory-Shan Shui toward site-responsive artistic practice.",
+            "Created during an artist residency in Huzhou, Zhejiang, this work\ntakes local trees as its starting point, reconnecting local ecology\nwith Chinese mythology. The trees are reimagined as ancient\nsacred beings, while ten suns construct an ecological space\nbeyond linear time. By bringing together place-based experience, mythological memory, and ecological observation, the work explores painting as a practice of\nlearning with place and co-producing knowledge, extending Memory-Shan Shui toward site-responsive artistic practice.",
           subPages: [
             {
               layout: "multiRow",
@@ -351,7 +360,7 @@ export const workCategories: WorkCategory[] = [
           cover: `${R2}/images/paintings-2025/covers/wildmans-paradise.jpg`,
           aspectRatio: 0.7874,
           layout: "right",
-          materials: "lacquer, ink, traditional Chinese pigments mixed media on paper, 50 x 60 cm, 2025",
+          materials: "lacquer, ink, traditional Chinese pigments mixed media on paper | 50cm × 60cm, 2025",
           description:
             "Through the tension between \"wildness\" and \"discipline,\" the work reexamines individual identity at the threshold between nature and society. The figure of the \"wild man\" operates simultaneously as a social identity and as a metaphor for the restoration of a connection between human beings and the natural world.",
         },
@@ -367,7 +376,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 12.1744,
           layout: "wide",
           materials:
-            "Kraft paper roll, mixed media collage | 340 cm x 30 cm | 2024",
+            "Kraft paper roll, mixed media collage | 340cm × 30cm, 2024",
           description:
             "Based on the visual structure of Chinese Shan Shui painting, I collage everyday paper materials collected during my time living in Europe—including receipts, exhibition catalogues, and flyers—into the composition, allowing place-based experiences and the traditions of Shan Shui to form a new space of memory. Rather than representing memory, the work explores how memory is generated through embodied walking, collecting, and sensing. The work also initiated my continuing investigation into sense of place and cross-cultural identity through artistic practice.",
           subPages: [
@@ -393,9 +402,9 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.3552,
           layout: "partial",
           materials:
-            "Acrylic on canvas, ink, traditional Chinese mineral\npigments, ballpoint pen | 55*40cm | 2024",
+            "Acrylic on canvas, ink, traditional Chinese mineral\npigments, ballpoint pen | 55cm × 40cm, 2024",
           description:
-            "Inspired by the Chinese\ntradition of Bapo painting, I\nuse burnt paper to divide the\ncomposition into two spaces:\nan ancient map and a\ncontemporary Shan Shui\nlandscape. | | The work reflects on how\ntraditional culture continues\nto generate new meanings in\nthe present. Here, Shan Shui\nbegins to be understood not\nas a fixed cultural heritage\nbut as an evolving system of\nknowledge.",
+            "Inspired by the Chinese\ntradition of Bapo painting, I\nuse burnt paper to divide the\ncomposition into two spaces:\nan ancient map and a\ncontemporary Shan Shui\nlandscape. The work reflects on how\ntraditional culture continues\nto generate new meanings in\nthe present. Here, Shan Shui\nbegins to be understood not\nas a fixed cultural heritage\nbut as an evolving system of\nknowledge.",
         },
         {
           slug: "collaged-love",
@@ -406,9 +415,9 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 1.3862,
           layout: "partial",
           materials:
-            "Acrylic and traditional ink on mounted canvas paper | 54 cm x 39 cm | 2024",
+            "Acrylic and traditional ink on mounted canvas paper | 54cm × 39cm, 2024",
           description:
-            "Beginning with intimate relationships and family experience, this work reorganises personal memories within the space of\nShan Shui. | | Drawing on the visual language\nof Han dynasty pictorial bricks, I embed imagined futures into\nthe landscape, transforming\nShan Shui into a relational\nspace that carries lived\nexperience rather than\nfunctioning merely as scenery. The work further develops\nMemory-Shan Shui as an\nartistic methodology for\nmemory-making and self-reflection.",
+            "Beginning with intimate relationships and family experience, this work reorganises personal memories within the space of\nShan Shui. Drawing on the visual language\nof Han dynasty pictorial bricks, I embed imagined futures into\nthe landscape, transforming\nShan Shui into a relational\nspace that carries lived\nexperience rather than\nfunctioning merely as scenery. The work further develops\nMemory-Shan Shui as an\nartistic methodology for\nmemory-making and self-reflection.",
         },
         {
           slug: "non-dualism",
@@ -419,7 +428,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 0.6667,
           layout: "left",
           materials:
-            "Acrylic on canvas, traditional Chinese\nmineral pigments, gold mud, white ink |\n80*130cm | 2024",
+            "Acrylic on canvas, traditional Chinese\nmineral pigments, gold mud, white ink |\n80cm × 130cm, 2024",
           description:
             "The painting integrates Eastern landscape philosophy\nwith Western painting materials, merging Buddha and\nnature into a world without clear boundaries. Body, landscape, and space continuously transform into one\nanother, responding to the non-dualistic idea in Shan\nShui philosophy that humans and all beings are\nmutually generated. It further expands Memory-Shan\nShui toward an exploration and expression of the\ninterconnected relationships.",
         },
@@ -432,7 +441,7 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 0.9865,
           layout: "left",
           materials:
-            "Acrylic, mineral pigments, silver foil, jewelry, quartz sand, vintage frame |\n15 cm x 15 cm | 2024",
+            "Acrylic, mineral pigments, silver foil, jewelry, quartz sand, vintage frame |\n15cm × 15cm, 2024",
           description:
             "Beginning with animal imagery from Han\ndynasty pictorial bricks, I transform newly\nemerging trees into mythical beings. The work\nreimagines the tree not as a natural object but\nas a living presence, exploring correspondence\nbetween humans and trees through cultural\nmemory and imagination. It also marks the\nbeginning of my Memory-Shan Shui practice, where more-than-human beings become\ncollaborators in artistic and ecological\nknowledge production.",
         },
@@ -445,9 +454,9 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 0.6975,
           layout: "right",
           materials:
-            "Acrylic on canvas, ink, ballpoint pen | 40 x 55 cm | 2024",
+            "Acrylic on canvas, ink, ballpoint pen | 40cm × 55cm, 2024",
           description:
-            "Combining traditional Shan\nShui, Dunhuang motifs, Han\ndynasty pictorial bricks, and\nother cultural imagery, this\nwork constructs a mythical\necological space that\ntranscends linear time. | | Visual memories from different\nhistorical periods coexist within\na single composition, forming a\ncultural landscape in\ncontinuous growth. Here, Shan\nShui no longer belongs to a\nparticular era but becomes a\nsite where collective memory is\ncontinuously regenerated.",
+            "Combining traditional Shan\nShui, Dunhuang motifs, Han\ndynasty pictorial bricks, and\nother cultural imagery, this\nwork constructs a mythical\necological space that\ntranscends linear time. Visual memories from different\nhistorical periods coexist within\na single composition, forming a\ncultural landscape in\ncontinuous growth. Here, Shan\nShui no longer belongs to a\nparticular era but becomes a\nsite where collective memory is\ncontinuously regenerated.",
         },
       ],
     },
@@ -473,11 +482,13 @@ export const workCategories: WorkCategory[] = [
           cover: `${R2}/images/installations-2026/covers/god-of-happiness.jpg`,
           aspectRatio: 0.7952,
           layout: "left",
-          materials: "Co-created Painting Installation | 79cm×98cm | 2026",
+          materials: "Co-created Painting Installation | 79cm × 98cm, 2026",
           description:
             "This work consists of painted images of the Xi Shen Jia Ma (喜神甲马, ritual paper images of the God of Happiness) and a participatory ritual co-created with visitors.|In the painting, I incorporate traditional Xi Shen Jia Ma imagery from Weishan into a primordial atmosphere composed of black and red tones. The work is placed alongside the existing time-based installation in the Xiwey Courtyard, creating a sense of timelessness and continuity between the contemporary artwork and the historical space.",
           subPages: [
             {
+              layout: "multiRow",
+              rows: [[0, 1, 2]],
               images: [
                 { src: `${R2}/images/installations-2026/god-of-happiness/part-1.jpg`, alt: "God of Happiness detail 1" },
                 { src: `${R2}/images/installations-2026/god-of-happiness/part-2.jpg`, alt: "God of Happiness detail 2" },
@@ -487,19 +498,22 @@ export const workCategories: WorkCategory[] = [
                 "At the same time, the work functions as an open-ended ritual that invites viewers to participate in its completion. During the opening and throughout the exhibition, visitors were invited to join the co-creation of \"giving the body of the God of Happiness.\" Participants first removed the artwork from the wall and placed it horizontally, then applied glue onto the white figure of the God of Happiness before scattering grains of rice onto its surface and allowing the material to settle for several minutes.|This intimate ritual draws upon the local Weishan wedding custom of Xiao Tang (洗澡汤, \"receiving blessings\" (zhan xi qi 沾喜气). Through the integration of folk traditions, embodied actions, and visual practice, the work becomes a collective construction of shared hopes for happiness and prosperity rooted in a specific place and community.",
             },
             {
-              layout: "single",
+              layout: "multiRow",
+              rows: [[0]],
               images: [
                 { src: `${R2}/images/installations-2026/god-of-happiness/part-4.jpg`, alt: "God of Happiness detail 4" },
               ],
             },
             {
-              layout: "single",
+              layout: "multiRow",
+              rows: [[0]],
               images: [
                 { src: `${R2}/images/installations-2026/god-of-happiness/part-5.jpg`, alt: "God of Happiness detail 5" },
               ],
             },
             {
-              layout: "single",
+              layout: "multiRow",
+              rows: [[0]],
               images: [
                 { src: `${R2}/images/installations-2026/god-of-happiness/part-6.jpg`, alt: "God of Happiness detail 6" },
               ],
@@ -582,7 +596,7 @@ export const workCategories: WorkCategory[] = [
           cover: `${R2}/images/installations-2025/covers/memory-nearby-chengdu.jpg`,
           aspectRatio: 1.3333,
           layout: "partial",
-          materials: "site-specific installatioin\n2025",
+          materials: "site-specific installatioin | 2025",
           description:
             "Through collecting everyday objects from communities in Chengdu, the work transforms individual memory objects into resin forms and embeds them within a Shan Shui structure. Mountains, rivers, and branches become mediums through which relationships between people and place are collectively generated. Memory-Shan Shui explores how relational connections can emerge from everyday local experiences.",
           subPages: [
@@ -642,9 +656,15 @@ export const workCategories: WorkCategory[] = [
             `${R2}/images/installations-2025/new-narrative-of-foshan/main-1.png`,
           cover: `${R2}/images/installations-2025/covers/new-narrative-of-foshan.png`,
           aspectRatio: 1.1438,
-          layout: "right",
+          layout: "partial",
+          images: [
+            {
+              src: `${R2}/images/installations-2025/new-narrative-of-foshan/main-1.png`,
+              alt: "New Narrative of Foshan",
+            },
+          ],
           materials:
-            "Collaborative painting installation | Assembled (layered) dimensions: 60 × 42 × 65 cm | Flat collage: 200 × 200 cm (individual panels: 60 × 60 cm) | Acrylic panels, acrylic paint, tracing paper, silver leaf, foil, stainless-steel frame | 2025",
+            "Collaborative painting installation | Assembled (layered) dimensions: 60 × 42 × 65 cm  Flat collage: 200 × 200 cm (individual panels: 60 × 60 cm) | Acrylic panels, acrylic paint, tracing paper, silver leaf, foil, stainless-steel frame  2025",
           description:
             "I initiated a public co-creation call, inviting participants to draw the objects or images they associated most strongly with Foshan. After collecting these materials, I cut and collaged them onto nine acrylic panels, adding my own painting to form a complete image. The participants' drawings and my intervention together create a puzzle of local memory",
           subPages: [
@@ -701,9 +721,9 @@ export const workCategories: WorkCategory[] = [
           aspectRatio: 0.7679,
           layout: "left",
           materials:
-            "Mixed media painting installation\nOil canvas, quartz sand, ink, acrylic paint, oil paint, paper pulp, silver foil, silver chains, nails, etc.\n40 cm x 60 cm\n2025",
+            "Mixed media painting installation | Oil canvas, quartz sand, ink, acrylic paint, oil paint, paper pulp, silver foil, silver chains, nails, etc. | 40cm × 60cm, 2025",
           description:
-            "作品中的文字是关于 “居住” 、“栖息”的几个甲骨文，如“门”、“室”、“舍”等。树木的根系在大地里自由恣意生长，梦境的紫色烟雾中有山水树石的美好宇宙和我心里的十个太阳。果绿色的花瓶是梦境的出口，也可以在现实中放置一些珍贵的记忆之物。",
+            "The text at the ceter of the painting consists of several oracle-bone script characters associated with dwelling and habitation, such as “door” (门), “room” (室), and “dwelling” (舍). The roots of the trees grow freely and expansively through the earth. Within the purple mist of the dreamscape lies an imagined universe of mountains, water, trees, and stones, together with the ten suns that exist in my inner world. The lime-green vase serves as an exit from the dreamscape, while also providing a space in the physical world to hold precious objects and fragments of memory.",
           subPages: [
             {
               layout: "multiRow",
@@ -731,8 +751,8 @@ export const workCategories: WorkCategory[] = [
     coverAspectRatio: 1.3654,
     years: [2026, 2025],
     layoutByYear: {
-      2026: [1],
-      2025: [1],
+      2026: [{ count: 1, widthPercent: 50 }],
+      2025: [{ count: 1, widthPercent: 50 }],
     },
     worksByYear: {
       2026: [
@@ -748,7 +768,7 @@ export const workCategories: WorkCategory[] = [
           imgWidthRatio: 0.75,
           heroLink:
             "https://youtu.be/hQQYAGv5Joc?is=G24nUufJKaHK3fC0",
-          heroCaption: "A video documenting the entire workshop process",
+          heroCaption: "A video documenting the entire workshop process, URL:https://youtu.be/uJXzXT_XhTk",
           description:
             "I invited each participant to select three photographs that represented their memories of Weishan and transform them through cutting, collage, and painting.\n\nWorking with photographs embedded with personal memories, participants collectively constructed experiences of place through processes of making, storytelling, and reconfiguration.\n\nThe workshop approaches place as a relational network that is continuously sensed, narrated, and regenerated, developing Memory-Shan Shui as an artistic practice through which place-based knowledge emerges together with individual life histories.",
           subPages: [
@@ -810,7 +830,11 @@ export const workCategories: WorkCategory[] = [
     coverAspectRatio: 1.7778,
     years: [2026],
     layoutByYear: {
-      2026: [2, 1],
+      2026: [
+        { count: 1, widthPercent: 50 },
+        { count: 1, widthPercent: 50 },
+        { count: 1, widthPercent: 50 },
+      ],
     },
     worksByYear: {
       2026: [
@@ -827,6 +851,7 @@ export const workCategories: WorkCategory[] = [
           description:
             "From a first-person perspective, I documented weddings within the rural mountain landscapes of Yunnan. The work reconstructs memories through fragmented images, moments of absence, voice-over narration, and Yi ethnic folk songs. The filmmaker remains a bodily participant within the image, allowing the moving image to become a process through which memories are co-generated by people and place, rather than an objective record. The work explores how moving images can function as a method of Memory-Shan Shui, understanding memory as an ongoing practice of correspondence between humans and their environments.",
           link: "https://youtu.be/uJXzXT_XhTk",
+          heroCaption: "A video documenting the workshop process, URL:https://youtu.be/uJXzXT_XhTk",
         },
         {
           slug: "embodied-memories-of-weishan",
@@ -841,6 +866,7 @@ export const workCategories: WorkCategory[] = [
           description:
             "Using their own memory collage works as a medium, participants continuously reconfigured local memories through bodily actions in a projection theatre at night. Rather than attempting to represent Weishan, the work allows experiences of place to continuously emerge through collective performance. It explores Memory-Shan Shui as a method of shared embodied perception.",
           link: "https://youtu.be/MHIlvJIKeMI?is=iFzXhB4n7UK8lYqW",
+          heroCaption: "A video documenting the workshop process, URL:https://youtu.be/MHIlvJIKeMI?is=iFzXhB4n7UK8lYqW",
         },
         {
           slug: "animism",
@@ -889,7 +915,7 @@ export function getWork(
 export function getLayoutForYear(
   categorySlug: string,
   year: number
-): number[] | undefined {
+): LayoutRowSpec[] | undefined {
   const category = getCategory(categorySlug);
   if (!category?.layoutByYear) return undefined;
   return category.layoutByYear[year];

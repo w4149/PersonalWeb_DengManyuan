@@ -14,6 +14,7 @@ import {
   FallbackThumbnailCtx,
   ShowViewOriginalCtx,
   PreviewableImg,
+  LightboxProvider,
 } from "@/components/previewable-image";
 
 type Props = {
@@ -283,10 +284,10 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
         </div>
         {subPage.description && (
           <p
-            className="text-gray-700 mt-4"
+            className="text-gray-700 mt-4 text-left"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "10px",
+              fontSize: "12px",
               lineHeight: "16pt",
               color: "#464646",
             }}
@@ -350,10 +351,10 @@ function GridSubPage({ subPage }: { subPage: SubPage }) {
       </div>
       {subPage.description && (
         <p
-          className="text-gray-700 mt-4"
+          className="text-gray-700 mt-4 text-left"
           style={{
             fontFamily: TITLE_FONT,
-            fontSize: "10px",
+            fontSize: "12px",
             lineHeight: "16pt",
             color: "#464646",
           }}
@@ -437,7 +438,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
               className="text-gray-700 text-left"
               style={{
                 fontFamily: TITLE_FONT,
-                fontSize: "10px",
+                fontSize: "12px",
                 lineHeight: "16pt",
                 color: "#464646",
               }}
@@ -524,7 +525,7 @@ function TextLeftStackedRightSubPage({ subPage }: { subPage: SubPage }) {
               className="text-gray-700 text-left"
               style={{
                 fontFamily: TITLE_FONT,
-                fontSize: "10px",
+                fontSize: "12px",
                 lineHeight: "16pt",
                 color: "#464646",
               }}
@@ -676,7 +677,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
             className="text-gray-700 mt-4 text-left"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "10px",
+              fontSize: "12px",
               lineHeight: "16pt",
               color: "#464646",
             }}
@@ -768,7 +769,7 @@ function StackedRightSubPage({ subPage }: { subPage: SubPage }) {
           className="text-gray-700 mt-4 text-left"
           style={{
             fontFamily: TITLE_FONT,
-            fontSize: "10px",
+            fontSize: "12px",
             lineHeight: "16pt",
             color: "#464646",
           }}
@@ -881,39 +882,70 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
 
   const H = containerSize?.h ?? 600;
   const totalW = containerSize?.w ?? 1200;
-  const colW = totalW / 3;
   const gap = GAP;
-
-  const centerAspect = dims[1] ? dims[1].w / dims[1].h : 1;
-  const centerH = H;
-  const centerW = centerAspect * centerH;
 
   const leftTopAspect = dims[0] ? dims[0].w / dims[0].h : 1;
   const leftBottomAspect = dims[2] ? dims[2].w / dims[2].h : 1;
+  const centerAspect = dims[1] ? dims[1].w / dims[1].h : 1;
   const rightTopAspect = dims[3] ? dims[3].w / dims[3].h : 1;
   const rightBottomAspect = dims[4] ? dims[4].w / dims[4].h : 1;
 
-  const sideH = (H - gap) / 2;
+  // ============ D1 = Y：整体 Justified 同比缩放 ============
+  // 基准高度（scale = 1 时）：
+  //   中心图高 = H（占满容器垂直空间）
+  //   角图高 sideH = H/2 − gap/2，两排之间刚好 gap=24 间距（与原实现一致）
+  const sideH_base = H / 2 - gap / 2;
+  const centerH_base = H;
+  // 三列贴合时的"理想参考宽"（中心图右侧 + gap + 右下图右侧贴在中心图右侧）
+  const w_LT_b = leftTopAspect * sideH_base;
+  const w_LB_b = leftBottomAspect * sideH_base;
+  const w_C_b = centerAspect * centerH_base;
+  const w_RT_b = rightTopAspect * sideH_base;
+  const w_RB_b = rightBottomAspect * sideH_base;
+  const fit_b = w_LT_b + 2 * gap + w_C_b + w_RB_b;
+  // scale = min(1, totalW / fit_b)：
+  //   宽屏 totalW >= fit_b -> scale=1，贴合布局但右侧有空白（不硬拉满）；
+  //   窄屏 totalW <  fit_b -> scale<1，五图按比例整体缩小到刚好不溢出容器宽度。
+  const rawScale = fit_b > 0.001 ? totalW / fit_b : 1;
+  const scale = Math.min(1, rawScale);
+  // 对极端窄屏（超长中心图）做下限保护：不让角图/中心图缩到 0
+  const SCALE_MIN = 0.1;
+  const safeScale = Math.max(SCALE_MIN, scale);
+
+  const sideH = safeScale * sideH_base;
+  const centerH = safeScale * centerH_base;
   const leftTopW = leftTopAspect * sideH;
   const leftBottomW = leftBottomAspect * sideH;
+  const centerW = centerAspect * centerH;
   const rightTopW = rightTopAspect * sideH;
   const rightBottomW = rightBottomAspect * sideH;
 
-  const maxLeftW = Math.max(leftTopW, leftBottomW, FALLBACK_WIDTH);
-  const maxRightW = Math.max(rightTopW, rightBottomW, FALLBACK_WIDTH);
+  // ============ D2 = P1：水平定位（按用户本轮文字） ============
+  // ① 左上图 + 左下图：容器内绝对左对齐 left=0
+  const leftLeft = 0;
+  // ② 中心图左边 = 左上图右边 + gap（由于左两图 left 都是 0，左上图右 = leftTopW）
+  const centerLeft = leftTopW + gap;
+  // ③ 右下图左边 = 中心图右边 + gap
+  const rightBottomLeft = centerLeft + centerW + gap;
+  // ④ P1：右上图右边 = 右下图右边 (= rightBottomLeft + rightBottomW)，所以
+  //        left_RT = (rightBottomLeft + rightBottomW) − rightTopW
+  const rightBottomRightEdge = rightBottomLeft + rightBottomW;
+  const rightTopLeft = rightBottomRightEdge - rightTopW;
 
-  const centerLeft = colW + gap / 2;
-  const leftLeft = centerLeft - maxLeftW - gap;
-  const rightLeft = centerLeft + centerW + gap;
   const leftTopTop = 0;
   const leftBottomTop = sideH + gap;
   const rightTopTop = 0;
   const rightBottomTop = sideH + gap;
 
+  // ============ D3：堆叠中中心图不动，四角图向中心图 box 收拢 ============
+  // - 中心图堆叠后 transform 永远 = "none"（完全不动，符合 D3）
+  // - 四角图目标：左上角 = (centerLeft, 0)，宽度 = centerW，高度 = centerH
+  //   （把四角图等比缩放成中心图外框大小，并移动到中心图左上角起点）
   const ANIM_DURATION = "1.2s";
-  const STACKED_W = totalW * 0.3;
-  const STACKED_CX = totalW / 2;
-  const STACKED_CY = H / 2;
+  const TARGET_X = centerLeft;
+  const TARGET_Y = 0;
+  const TARGET_W = centerW;
+  const TARGET_H = centerH;
 
   const getStackedTransform = (
     imgLeft: number,
@@ -922,14 +954,16 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
     imgH: number
   ) => {
     if (!stacked) return "none";
-    const imgCx = imgLeft + imgW / 2;
-    const imgCy = imgTop + imgH / 2;
-    const scale = STACKED_W / imgW;
-    const dx = STACKED_CX - imgCx;
-    const dy = STACKED_CY - imgCy;
-    return `translate(${dx}px, ${dy}px) scale(${scale})`;
+    // 先 translate 让 img 左上角对齐目标左上角，再以目标左上角为原点做 scale
+    // （因此 transform-origin 要改成 "top left"，见下方 sideImages style）
+    const dx = TARGET_X - imgLeft;
+    const dy = TARGET_Y - imgTop;
+    const sx = TARGET_W / Math.max(imgW, 0.001);
+    const sy = TARGET_H / Math.max(imgH, 0.001);
+    return `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
   };
 
+  // ============ sideImages：使用各自真实宽（不再统一 maxLeftW/maxRightW） ============
   const sideImages = [
     {
       src: leftTopImg.src,
@@ -937,7 +971,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
       imgIndex: 0,
       imgLeft: leftLeft,
       imgTop: leftTopTop,
-      imgW: maxLeftW,
+      imgW: leftTopW,
       imgH: sideH,
       objectPos: "top" as const,
       z: 3,
@@ -948,7 +982,7 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
       imgIndex: 2,
       imgLeft: leftLeft,
       imgTop: leftBottomTop,
-      imgW: maxLeftW,
+      imgW: leftBottomW,
       imgH: sideH,
       objectPos: "left bottom" as const,
       z: 3,
@@ -957,9 +991,9 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
       src: rightTopImg.src,
       alt: rightTopImg.alt || "Right Top",
       imgIndex: 3,
-      imgLeft: rightLeft,
+      imgLeft: rightTopLeft,
       imgTop: rightTopTop,
-      imgW: maxRightW,
+      imgW: rightTopW,
       imgH: sideH,
       objectPos: "top" as const,
       z: 3,
@@ -968,9 +1002,9 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
       src: rightBottomImg.src,
       alt: rightBottomImg.alt || "Right Bottom",
       imgIndex: 4,
-      imgLeft: rightLeft,
+      imgLeft: rightBottomLeft,
       imgTop: rightBottomTop,
-      imgW: maxRightW,
+      imgW: rightBottomW,
       imgH: sideH,
       objectPos: "bottom" as const,
       z: 3,
@@ -999,16 +1033,19 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
               height: `${s.imgH}px`,
               width: `${s.imgW}px`,
               objectPosition: s.objectPos,
-              zIndex: stacked ? 5 : s.z,
+              // D4a：堆叠后中心图 z 在上（=2 保留）；四角图在下。
+              // 为了四角图在上层不会盖到中心图，堆叠时我们把角图 z 降到 1。
+              zIndex: stacked ? 1 : s.z,
               transform: getStackedTransform(s.imgLeft, s.imgTop, s.imgW, s.imgH),
               opacity: stacked ? 0.5 : 1,
               transition: `transform ${ANIM_DURATION} cubic-bezier(0.4, 0, 0.2, 1), opacity ${ANIM_DURATION} cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s`,
-              transformOrigin: "center center",
+              // D3：堆叠 transform 以"目标左上角"为锚（四角图左上角 → 中心图左上角）
+              transformOrigin: "top left",
             }}
           />
         ))}
 
-        {/* Center Image (on top when stacked) */}
+        {/* Center Image (堆叠中 transform 永远 = none，尺寸位置不动，D3) */}
         <PreviewableImg
           ref={(el) => { imgRefs.current[1] = el; }}
           src={centerImg.src}
@@ -1022,10 +1059,11 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             height: `${centerH}px`,
             width: `${centerW}px`,
             objectPosition: "top",
-            zIndex: stacked ? 10 : 2,
-            transform: getStackedTransform(centerLeft, 0, centerW, centerH),
+            // D4a：堆叠后中心图 z 稳定在 2；四角 z=1（下方），所以中心图在上，半透显露出下方叠层
+            zIndex: 2,
+            transform: "none", // D3：始终不动
             opacity: stacked ? 0.5 : 1,
-            transition: `transform ${ANIM_DURATION} cubic-bezier(0.4, 0, 0.2, 1), opacity ${ANIM_DURATION} cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s`,
+            transition: `opacity ${ANIM_DURATION} cubic-bezier(0.4, 0, 0.2, 1), z-index 0.1s`,
             transformOrigin: "center center",
           }}
         />
@@ -1151,10 +1189,10 @@ function RowSubPage({ subPage }: { subPage: SubPage }) {
   );
   const descBlock = subPage.description ? (
     <p
-      className="text-gray-700 mt-4"
+      className="text-gray-700 mt-4 text-left"
       style={{
         fontFamily: TITLE_FONT,
-        fontSize: "10px",
+        fontSize: "12px",
         lineHeight: "16pt",
         color: "#464646",
       }}
@@ -1301,10 +1339,10 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
             />
             {subPage.description && (
               <p
-                className="mt-4"
+                className="text-gray-700 mt-4 text-left"
                 style={{
                   fontFamily: TITLE_FONT,
-                  fontSize: "10px",
+                  fontSize: "12px",
                   lineHeight: "16pt",
                   color: "#464646",
                 }}
@@ -1369,10 +1407,10 @@ function LeftMainRightStackedSubPage({ subPage }: { subPage: SubPage }) {
           />
           {subPage.description && (
             <p
-              className="mt-4"
+              className="text-gray-700 mt-4 text-left"
               style={{
                 fontFamily: TITLE_FONT,
-                fontSize: "10px",
+                fontSize: "12px",
                 lineHeight: "16pt",
                 color: "#464646",
               }}
@@ -1495,10 +1533,10 @@ function MultiRowSubPage({ subPage }: { subPage: SubPage }) {
 
   const descBlock = subPage.description ? (
     <p
-      className="text-gray-700 mt-4"
+      className="text-gray-700 mt-4 text-left"
       style={{
         fontFamily: TITLE_FONT,
-        fontSize: "10px",
+        fontSize: "12px",
         lineHeight: "16pt",
         color: "#464646",
       }}
@@ -1786,7 +1824,7 @@ function SevenSplitSubPage({ subPage }: { subPage: SubPage }) {
             className="text-gray-700 mt-4"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "10px",
+              fontSize: "12px",
               lineHeight: "16pt",
               color: "#464646",
             }}
@@ -1829,10 +1867,10 @@ function SevenSplitSubPage({ subPage }: { subPage: SubPage }) {
       </div>
       {subPage.description && (
         <p
-          className="text-gray-700 mt-4"
+          className="text-gray-700 mt-4 text-left"
           style={{
             fontFamily: TITLE_FONT,
-            fontSize: "10px",
+            fontSize: "12px",
             lineHeight: "16pt",
             color: "#464646",
           }}
@@ -2046,7 +2084,7 @@ function BecomingHumanCollage5SubPage({ subPage }: { subPage: SubPage }) {
             className="text-gray-700 mt-4"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "10px",
+              fontSize: "12px",
               lineHeight: "16pt",
               color: "#464646",
             }}
@@ -2086,10 +2124,10 @@ function BecomingHumanCollage5SubPage({ subPage }: { subPage: SubPage }) {
       </div>
       {subPage.description && (
         <p
-          className="text-gray-700 mt-4"
+          className="text-gray-700 mt-4 text-left"
           style={{
             fontFamily: TITLE_FONT,
-            fontSize: "10px",
+            fontSize: "12px",
             lineHeight: "16pt",
             color: "#464646",
           }}
@@ -2147,10 +2185,10 @@ function SubPageLayout({ subPage }: { subPage: SubPage }) {
         />
         {subPage.description && (
           <p
-            className="text-gray-700 mt-4"
+            className="text-gray-700 mt-4 text-left"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "10px",
+              fontSize: "12px",
               lineHeight: "16pt",
               color: "#464646",
             }}
@@ -2190,11 +2228,14 @@ export function WorkDetail({ work, index, gap = GAP }: Props) {
   // work 级开关：有 heroLink / work.link（整个作品是外部跳转）→ 主图 + 所有 part-N 都隐藏"查看原图"
   const showWorkLevelVO = !(work.heroLink || work.link);
   const wrapCtx = (node: React.ReactNode) => (
-    <FallbackThumbnailCtx.Provider value={work.thumbnail}>
-      <ShowViewOriginalCtx.Provider value={showWorkLevelVO}>
-        {node}
-      </ShowViewOriginalCtx.Provider>
-    </FallbackThumbnailCtx.Provider>
+    // D7：LightboxProvider 只挂在 WorkDetail 内部单例
+    <LightboxProvider>
+      <FallbackThumbnailCtx.Provider value={work.thumbnail}>
+        <ShowViewOriginalCtx.Provider value={showWorkLevelVO}>
+          {node}
+        </ShowViewOriginalCtx.Provider>
+      </FallbackThumbnailCtx.Provider>
+    </LightboxProvider>
   );
 
   const subPages = renderSubPages(work.subPages);
@@ -2551,27 +2592,33 @@ function HeroImageLayout({
   return (
     <div className="flex flex-col items-center w-full">
       <div className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start mb-2 sm:mb-2 gap-2 sm:gap-0">
-          <h1
-            className="italic text-gray-900 w-full sm:w-auto"
-            style={{ fontFamily: TITLE_FONT, fontSize: "18px" }}
-          >
-            {numStr}
-            {displayTitle}
-          </h1>
-          {work.materials && (
-            <p
-              className="text-gray-500 text-left sm:text-right w-full sm:w-auto"
-              style={{
-                fontFamily: MONO_FONT,
-                fontSize: "12px",
-                lineHeight: "16pt",
-                color: "#464646",
-              }}
-            >
-              {renderMaterials(work.materials)}
-            </p>
-          )}
+        {/* 标题行：和图片/描述使用相同的宽度（imageWidthPercent%）+ 居中包裹，
+            保证标题左边 = 图片左边，材料右边 = 图片右边 */}
+        <div className="flex justify-center mb-2 sm:mb-2">
+          <div className="w-full" style={{ width: widthStyle }}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start gap-2 sm:gap-0">
+              <h1
+                className="italic text-gray-900 w-full sm:w-auto"
+                style={{ fontFamily: TITLE_FONT, fontSize: "20px" }}
+              >
+                {numStr}
+                {displayTitle}
+              </h1>
+              {work.materials && (
+                <p
+                  className="text-gray-500 text-left sm:text-right w-full sm:w-auto"
+                  style={{
+                    fontFamily: MONO_FONT,
+                    fontSize: "14px",
+                    lineHeight: "16pt",
+                    color: "#464646",
+                  }}
+                >
+                  {renderMaterials(work.materials)}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <HeroImageRow
@@ -2588,7 +2635,7 @@ function HeroImageLayout({
                 className="text-gray-700 text-left"
                 style={{
                   fontFamily: TITLE_FONT,
-                  fontSize: "10px",
+                  fontSize: "12px",
                   lineHeight: "16pt",
                   color: "#464646",
                 }}
@@ -2626,27 +2673,33 @@ function HeroImageBottomLayout({
   return (
     <div className="flex flex-col items-center w-full">
       <div className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start mb-2 sm:mb-2 gap-2 sm:gap-0">
-          <h1
-            className="italic text-gray-900 w-full sm:w-auto"
-            style={{ fontFamily: TITLE_FONT, fontSize: "18px" }}
-          >
-            {numStr}
-            {displayTitle}
-          </h1>
-          {work.materials && (
-            <p
-              className="text-gray-500 text-left sm:text-right w-full sm:w-auto"
-              style={{
-                fontFamily: MONO_FONT,
-                fontSize: "12px",
-                lineHeight: "16pt",
-                color: "#464646",
-              }}
-            >
-              {renderMaterials(work.materials)}
-            </p>
-          )}
+        {/* 标题行：和图片/描述使用相同的宽度（imageWidthPercent%）+ 居中包裹，
+            保证标题左边 = 图片左边，材料右边 = 图片右边 */}
+        <div className="flex justify-center mb-2 sm:mb-2">
+          <div className="w-full" style={{ width: widthStyle }}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start gap-2 sm:gap-0">
+              <h1
+                className="italic text-gray-900 w-full sm:w-auto"
+                style={{ fontFamily: TITLE_FONT, fontSize: "20px" }}
+              >
+                {numStr}
+                {displayTitle}
+              </h1>
+              {work.materials && (
+                <p
+                  className="text-gray-500 text-left sm:text-right w-full sm:w-auto"
+                  style={{
+                    fontFamily: MONO_FONT,
+                    fontSize: "14px",
+                    lineHeight: "16pt",
+                    color: "#464646",
+                  }}
+                >
+                  {renderMaterials(work.materials)}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <HeroImageRow
@@ -2664,7 +2717,7 @@ function HeroImageBottomLayout({
                 className="text-gray-700 text-left"
                 style={{
                   fontFamily: TITLE_FONT,
-                  fontSize: "10px",
+                  fontSize: "12px",
                   lineHeight: "16pt",
                   color: "#464646",
                 }}
@@ -2704,7 +2757,7 @@ function GridLayout({
             className="italic text-gray-900 w-full sm:w-auto"
             style={{
               fontFamily: TITLE_FONT,
-              fontSize: "18px",
+              fontSize: "20px",
             }}
           >
             {numStr}
@@ -2715,7 +2768,7 @@ function GridLayout({
               className="text-gray-500 text-left sm:text-right w-full sm:w-auto"
               style={{
                 fontFamily: MONO_FONT,
-                fontSize: "12px",
+                fontSize: "14px",
                 lineHeight: "16pt",
                 color: "#464646",
               }}
@@ -2775,10 +2828,10 @@ function GridLayout({
         {work.description && (
           <div className="flex justify-center mt-4">
             <p
-              className="text-gray-700 text-left sm:text-center"
+              className="text-gray-700 text-left"
               style={{
                 fontFamily: TITLE_FONT,
-                fontSize: "10px",
+                fontSize: "12px",
                 lineHeight: "16pt",
                 color: "#464646",
                 maxWidth: "100%",
@@ -2896,7 +2949,7 @@ function CenteredLayout({
     >
       <h1
         className="italic text-gray-900 mb-2 sm:mb-4"
-        style={{ fontFamily: TITLE_FONT, fontSize: "18px" }}
+        style={{ fontFamily: TITLE_FONT, fontSize: "20px" }}
       >
         {numStr}
         {displayTitle}
@@ -2904,8 +2957,8 @@ function CenteredLayout({
 
       {work.materials && (
         <p
-          className="text-gray-500 leading-relaxed mb-4 sm:mb-10 text-left sm:text-right"
-          style={{ fontFamily: MONO_FONT, fontSize: "12px", lineHeight: "16pt", color: "#464646" }}
+          className="text-gray-500 leading-relaxed mb-4 sm:mb-10 text-left"
+          style={{ fontFamily: MONO_FONT, fontSize: "14px", lineHeight: "16pt", color: "#464646" }}
         >
           {renderMaterials(work.materials)}
         </p>
@@ -2913,8 +2966,8 @@ function CenteredLayout({
 
       {work.description && (
         <p
-          className="text-gray-700 leading-relaxed"
-          style={{ fontFamily: TITLE_FONT, fontSize: "10px", lineHeight: "16pt", color: "#464646" }}
+          className="text-gray-700 leading-relaxed text-left"
+          style={{ fontFamily: TITLE_FONT, fontSize: "12px", lineHeight: "16pt", color: "#464646" }}
         >
           {renderDescription(work.description)}
         </p>
@@ -3074,7 +3127,7 @@ function SideBySideLayout({
     >
       <h1
         className="italic text-gray-900 mb-2 sm:mb-4"
-        style={{ fontFamily: TITLE_FONT, fontSize: "18px" }}
+        style={{ fontFamily: TITLE_FONT, fontSize: "20px" }}
       >
         {numStr}
         {displayTitle}
@@ -3083,7 +3136,7 @@ function SideBySideLayout({
       {work.materials && (
         <p
           className="text-gray-500 leading-relaxed mb-4 sm:mb-10 text-left"
-          style={{ fontFamily: MONO_FONT, fontSize: "12px", lineHeight: "16pt", color: "#464646" }}
+          style={{ fontFamily: MONO_FONT, fontSize: "14px", lineHeight: "16pt", color: "#464646" }}
         >
           {renderMaterials(work.materials)}
         </p>
@@ -3092,7 +3145,7 @@ function SideBySideLayout({
       {work.description && (
         <p
           className="text-gray-700 leading-relaxed text-left"
-          style={{ fontFamily: TITLE_FONT, fontSize: "10px", lineHeight: "16pt", color: "#464646" }}
+          style={{ fontFamily: TITLE_FONT, fontSize: "12px", lineHeight: "16pt", color: "#464646" }}
         >
           {renderDescription(work.description)}
         </p>
@@ -3118,10 +3171,12 @@ function SideBySideLayout({
   }
 
   // 桌面端：图片侧的外边距（只在和文本之间加 gap）
+  // A2：当 imageSide="right" 时，文本贴左（默认 flex-start），图片块用 marginLeft:auto 顶到容器右边界。
+  //     当 imageSide="left" 时，文本和图整体左对齐（默认 flex-start），图片仅设置右侧 24px 间隔（gap）。
   const imageWrapperStyle: React.CSSProperties =
     imageSide === "left"
       ? { flexShrink: 0, marginRight: gap }
-      : { flexShrink: 0, marginLeft: gap };
+      : { flexShrink: 0, marginLeft: "auto" };
 
   const left = imageSide === "left"
     ? <div style={imageWrapperStyle}>{image}</div>

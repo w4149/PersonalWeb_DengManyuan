@@ -5,6 +5,9 @@ import {
   createContext,
   useContext,
   forwardRef,
+  useCallback,
+  useEffect,
+  useRef,
 } from "react";
 
 // 两个 Context 都抽出来放共享文件：
@@ -13,6 +16,28 @@ import {
 // PreviewableImg 的 showViewOriginal prop 优先级最高（可覆盖 Context）。画廊层一律传 showViewOriginal={false} 来关闭按钮。
 export const FallbackThumbnailCtx = createContext<string | undefined>(undefined);
 export const ShowViewOriginalCtx = createContext<boolean>(true);
+
+// =============================================================
+// Lightbox（全屏原图浮窗）共享 Context
+//   - PreviewableImg 消费：按钮点击 → lightboxCtx.open(origSrc)
+//                           原图加载后 → 容器点击再 open(origSrc)（B1 语义）
+//   - Provider 在 WorkDetail 顶层单例挂载（D7）
+//   - 深灰半透明遮罩 + 图片完整居中 + 点任意处关闭 + ESC + 滚动锁
+// =============================================================
+export type LightboxCtxValue = {
+  /** 打开浮窗并展示指定 src（原图地址）；传空串等同 close。同一 src 重复调用等价于 reopen（动画重新执行）。 */
+  open: (src: string) => void;
+  /** 关闭浮窗 */
+  close: () => void;
+  /** 当前是否打开（仅用于 Provider 内部渲染或调试；消费方一般不需要） */
+  isOpen: () => boolean;
+};
+const LIGHTBOX_CTX_DEFAULT: LightboxCtxValue = {
+  open: () => {},
+  close: () => {},
+  isOpen: () => false,
+};
+export const LightboxCtx = createContext<LightboxCtxValue>(LIGHTBOX_CTX_DEFAULT);
 
 export type PreviewableImgProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   showViewOriginal?: boolean; // undefined → 读 Context（默认 true）；true/false → 强制覆盖。画廊层一律传 false
@@ -127,6 +152,7 @@ export const PreviewableImg = forwardRef<HTMLImageElement, PreviewableImgProps>(
   function PreviewableImg(props, ref) {
     const fallback = useContext(FallbackThumbnailCtx);
     const workLevelShow = useContext(ShowViewOriginalCtx);
+    const lightbox = useContext(LightboxCtx);
     const {
       src: origSrc = "",
       onError: outerOnError,
@@ -237,13 +263,28 @@ export const PreviewableImg = forwardRef<HTMLImageElement, PreviewableImgProps>(
     // ========================================================
     // BRANCH B: Grid Crossfade 模式 → 完整功能（Hero / 画廊 / 普通 part）
     // ========================================================
+
+    // 容器是否可点击 → 打开 Lightbox（B1 语义：图片区域再次点击也弹；
+    //   但仅在"本图允许查看原图（finalShowVO=true）"时生效，heroLink/work.link 图片一律跳过）
+    const containerClickable = finalShowVO;
+    const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!containerClickable) return;
+      // 不拦截子元素按钮（按钮自己会 stopPropagation），也不让外层 <a>/router-link 吃到
+      e.preventDefault();
+      // D1：按钮点击过，也仍执行原图 inline 请求（若没请求过则补请求，保证页面也清晰）
+      if (!originalRequested) setOriginalRequested(true);
+      lightbox.open(origSrc);
+    };
+
     return (
       <div
         className={cnPreview(
           "group grid relative overflow-hidden [grid-template-areas:_'img'] place-items-stretch",
+          containerClickable ? "cursor-zoom-in" : "",
           outerClasses
         )}
         style={outerStyle}
+        onClick={containerClickable ? handleContainerClick : undefined}
       >
         {/* ====== Layer 1: 预览图（底层，Grid in-flow 驱动盒子比例） ====== */}
         {renderPreview && (
@@ -295,7 +336,10 @@ export const PreviewableImg = forwardRef<HTMLImageElement, PreviewableImgProps>(
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
+              // D1：仍执行就地 inline 原图请求（叠化仍保留；浮窗是附加视图）
               if (!originalRequested) setOriginalRequested(true);
+              // 打开全屏灰色浮窗展示原图
+              lightbox.open(origSrc);
             }}
             className="transition-opacity duration-200 absolute bottom-2 right-2 z-[5] opacity-0 group-hover:opacity-90 hover:!opacity-100 active:opacity-100"
             style={{
@@ -322,3 +366,135 @@ export const PreviewableImg = forwardRef<HTMLImageElement, PreviewableImgProps>(
   }
 );
 PreviewableImg.displayName = "PreviewableImg";
+
+// =============================================================
+// LightboxProvider —— 单例全屏浮窗（挂在 WorkDetail 顶层 wrapCtx 最外层）
+// =============================================================
+export function LightboxProvider({ children }: { children: React.ReactNode }) {
+  // 不用 useState 存 src，避免 setState 触发 Provider 整树子节点 rerender（子图多）；
+  // 用 ref 存数据 + 只靠一个 trigger state 来触发 Provider 自身的浮窗渲染即可。
+  const srcRef = useRef<string>("");
+  const openRef = useRef<boolean>(false);
+  const prevOverflowRef = useRef<string>("");
+  const [, setTick] = useState(0); // 只用于 force re-render Provider 的浮窗
+
+  const rerender = useCallback(() => setTick((t) => (t + 1) & 0xffff), []);
+
+  const open = useCallback(
+    (src: string) => {
+      if (!src) {
+        close();
+        return;
+      }
+      srcRef.current = src;
+      const wasOpen = openRef.current;
+      openRef.current = true;
+      // 滚动锁（D5）：只在首次打开时记录原值；重复 open 不重复写
+      if (!wasOpen && typeof document !== "undefined") {
+        prevOverflowRef.current = document.body.style.overflow || "";
+        document.body.style.overflow = "hidden";
+      }
+      rerender();
+    },
+    [rerender]
+  );
+
+  const close = useCallback(() => {
+    if (!openRef.current) return;
+    openRef.current = false;
+    if (typeof document !== "undefined") {
+      document.body.style.overflow = prevOverflowRef.current;
+      prevOverflowRef.current = "";
+    }
+    rerender();
+  }, [rerender]);
+
+  const isOpen = useCallback(() => openRef.current, []);
+
+  // ESC 键关闭（D5）：仅在打开时绑定一次，关闭时解绑；useEffect 依赖 openRef 不可观察，
+  // 所以通过 [open, close] 间接保证回调稳定，再每次 mounted/open 时重绑
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && openRef.current) {
+        e.preventDefault();
+        close();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [close]);
+
+  const ctxValue: LightboxCtxValue = { open, close, isOpen };
+
+  const lbOpen = openRef.current;
+  const lbSrc = srcRef.current;
+
+  return (
+    <LightboxCtx.Provider value={ctxValue}>
+      {children}
+      {lbOpen && lbSrc && (
+        <LightboxOverlay src={lbSrc} onClose={close} />
+      )}
+    </LightboxCtx.Provider>
+  );
+}
+
+/** 浮窗覆盖层（独立组件：动画状态自管理，避免 Provider 本体频繁重绘） */
+function LightboxOverlay({
+  src,
+  onClose,
+}: {
+  src: string;
+  onClose: () => void;
+}) {
+  // 进场/退场透明度：mounted → opacity 1；点击 onClose 时立刻卸载（Provider 删节点）
+  const [vis, setVis] = useState(false);
+  useEffect(() => {
+    // 下一帧再设 opacity 1 → 触发 transition（防闪现）
+    const id = requestAnimationFrame(() => setVis(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const handleClose = (e: React.MouseEvent) => {
+    // D6：点任何地方（包括图片）都关闭；不 stopPropagation
+    e.preventDefault();
+    onClose();
+  };
+
+  return (
+    <div
+      aria-modal="true"
+      role="dialog"
+      onClick={handleClose}
+      className="fixed inset-0 z-[9999] flex items-center justify-center select-none"
+      style={{
+        background: "rgba(30,30,30,0.88)", // D3 深灰半透明
+        opacity: vis ? 1 : 0,
+        transition: "opacity 180ms ease-out",
+        // 即使下挂图片的点击冒泡 stop 了也兜底（但本实现图片不 stop）
+      }}
+    >
+      <img
+        src={src}
+        alt=""
+        decoding="async"
+        draggable={false}
+        className="!select-none"
+        style={{
+          maxWidth: "calc(100vw - 80px)", // D4 左右各 40px 留白
+          maxHeight: "calc(100vh - 80px)", // D4 上下各 40px 留白
+          width: "auto",
+          height: "auto",
+          display: "block",
+          objectFit: "contain",
+          // 防止 Safari iOS 长图下有 inline baseline 白边（block 已解决）
+          // 禁止拖拽：用 draggable={false} + select-none 统一跨浏览器
+          cursor: "zoom-out",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      />
+    </div>
+  );
+}

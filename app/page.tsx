@@ -18,9 +18,24 @@ export default function HomePage() {
       ============================================================ */}
       <section
         id="home"
-        className="snap-start min-h-screen w-full relative flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-24 py-24 sm:py-20"
+        className="snap-start min-h-screen w-full relative flex flex-col justify-center px-6 sm:px-8 md:px-16 lg:px-24 py-24 sm:py-20 overflow-hidden"
       >
-        <div className="max-w-4xl w-full">
+        {/* 背景层：cover 裁裁剪 + 居中定位；pointer-events:none 不截获点击/滚动 */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-0 pointer-events-none bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage:
+              "url('https://pub-0152450371c44ecb87bb433ea94e2039.r2.dev/images/cover/cover-1.webp')",
+          }}
+        />
+        {/* 蒙版层：1a 白色薄蒙 60%，保证深色文字可读 */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-0 pointer-events-none bg-white/60"
+        />
+
+        <div className="relative z-10 max-w-4xl w-full">
           <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-light tracking-tight text-gray-900 leading-tight">
             Deng Manyuan{" "}
             <span className="block sm:inline text-gray-400 font-normal text-2xl sm:text-3xl md:text-5xl lg:text-6xl mt-2 sm:mt-0">
@@ -47,7 +62,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="mt-12 sm:mt-0 sm:absolute sm:bottom-8 sm:right-8 md:sm:bottom-12 md:sm:right-12">
+        <div className="relative z-10 mt-12 sm:mt-0 sm:absolute sm:bottom-8 sm:right-8 md:sm:bottom-12 md:sm:right-12">
           <div className="inline-flex items-center gap-2 border border-gray-200 bg-gray-50 px-4 py-2 rounded">
             <span className="text-sm text-gray-500">Contact:</span>
             <a
