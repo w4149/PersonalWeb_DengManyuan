@@ -884,11 +884,24 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
   const totalW = containerSize?.w ?? 1200;
   const gap = GAP;
 
-  const leftTopAspect = dims[0] ? dims[0].w / dims[0].h : 1;
-  const leftBottomAspect = dims[2] ? dims[2].w / dims[2].h : 1;
-  const centerAspect = dims[1] ? dims[1].w / dims[1].h : 1;
-  const rightTopAspect = dims[3] ? dims[3].w / dims[3].h : 1;
-  const rightBottomAspect = dims[4] ? dims[4].w / dims[4].h : 1;
+  // 读取显式写死的 aspect 兜底（方案二：不再依赖 dims onLoad 首帧到位，解决刷新坏态/缓存命中漏事件）
+  // 优先级：imageAspects[i] > dims[i].w/dims[i].h > 1（正方形假设最后兜底）
+  // nullish coalescing 防 imageAspects 数组本身 / 指定下标越界
+  const preAspects = subPage.imageAspects ?? [];
+  const aspectAt = (i: number): number => {
+    if (preAspects[i] != null && Number.isFinite(preAspects[i]) && (preAspects[i] as number) > 0) {
+      return preAspects[i] as number;
+    }
+    if (dims[i]) {
+      return dims[i].w / dims[i].h;
+    }
+    return 1;
+  };
+  const leftTopAspect = aspectAt(0);
+  const leftBottomAspect = aspectAt(2);
+  const centerAspect = aspectAt(1);
+  const rightTopAspect = aspectAt(3);
+  const rightBottomAspect = aspectAt(4);
 
   // ============ D1 = Y：整体 Justified 同比缩放 ============
   // 基准高度（scale = 1 时）：
@@ -902,10 +915,14 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
   const w_C_b = centerAspect * centerH_base;
   const w_RT_b = rightTopAspect * sideH_base;
   const w_RB_b = rightBottomAspect * sideH_base;
-  const fit_b = w_LT_b + 2 * gap + w_C_b + w_RB_b;
+  // Layer blending 按钮宽度预留（紧贴 RB 右侧，按钮与图之间 gap=24）
+  // 英文 "Layer blending" / "Restore layers" 最长文案预估 + padding 4+9 px ≈ 135 px；
+  // 给 150 px 兜底，足够切换文案后不溢出容器。
+  const BTN_WIDTH_RESERVED = 150;
+  const fit_b = w_LT_b + 2 * gap + w_C_b + w_RB_b + gap + BTN_WIDTH_RESERVED;
   // scale = min(1, totalW / fit_b)：
   //   宽屏 totalW >= fit_b -> scale=1，贴合布局但右侧有空白（不硬拉满）；
-  //   窄屏 totalW <  fit_b -> scale<1，五图按比例整体缩小到刚好不溢出容器宽度。
+  //   窄屏 totalW <  fit_b -> scale<1，五图 + 按钮按比例整体缩小到刚好不溢出容器宽度。
   const rawScale = fit_b > 0.001 ? totalW / fit_b : 1;
   const scale = Math.min(1, rawScale);
   // 对极端窄屏（超长中心图）做下限保护：不让角图/中心图缩到 0
@@ -1067,6 +1084,47 @@ function FiveImageStackSubPage({ subPage }: { subPage: SubPage }) {
             transformOrigin: "center center",
           }}
         />
+
+        {/* Layer blending / Restore layers 按钮：紧贴右下图 (RB) 右侧垂直居中
+            - 与中心图共用同一个 stacked state：点击切换堆叠动画（四角→中心叠化 + opacity 0.5）
+            - 样式与 View original image 胶囊一致：半黑圆角 pill + 白字 11px + 透明度 hover 过渡
+            - 不依赖 group hover：按钮是常驻可见的显式 CTA（用户明确"按钮放在右下图右边"，而非 hover 才显）
+            - 位置参与 fit_b scale 预留（见 BTN_WIDTH_RESERVED），窄屏下整体等比缩小，不会被 overflow:hidden 裁掉 */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setStacked((s) => !s);
+          }}
+          className="transition-opacity duration-200 absolute opacity-90 hover:opacity-100 active:opacity-100"
+          style={{
+            left: `${rightBottomLeft + rightBottomW + gap}px`,
+            // 垂直底对齐：按钮底边 = 右下图 (RB) 底边
+            // RB.top = H/2 + gap/2；RB.bottom = RB.top + sideH
+            // 按钮高由 padding (4+4 px) + 11px 行高 (lineHeight:1) 近似 20 px
+            // 若按钮内容换行（实际只有一层英文），此处可能有 1-2px 偏差；可把高度改成显式 height:20px
+            top: `${H / 2 + gap / 2 + sideH - 20}px`,
+            padding: "4px 9px",
+            height: "20px", // 显式写死高度 → 底边对齐到像素级不随字重/行高漂
+            borderRadius: "9999px",
+            background: "rgba(0,0,0,0.55)",
+            color: "white",
+            fontSize: "11px",
+            lineHeight: 1,
+            letterSpacing: "0.02em",
+            fontFamily: "system-ui, -apple-system, sans-serif",
+            border: "none",
+            cursor: "pointer",
+            userSelect: "none",
+            WebkitBackdropFilter: "blur(2px)",
+            backdropFilter: "blur(2px)",
+            zIndex: stacked ? 5 : 6, // 堆叠动画期间也不被任何半透图片覆盖
+          }}
+          aria-pressed={stacked}
+        >
+          {stacked ? "Restore layers" : "Layer blending"}
+        </button>
       </div>
     </div>
   );

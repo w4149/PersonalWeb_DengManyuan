@@ -29,6 +29,18 @@ export type SubPage = {
    * 也可用于其他行优先布局（如 rowCaption），同样默认 100。
    */
   widthPercent?: number;
+  /**
+   * 【可选】显式声明 images[] 每一张图的宽高比（width / height）。
+   * 当组件首帧渲染、图片 onLoad 尚未触发（或浏览器缓存命中导致 onLoad 事件不派发）时，
+   * FiveImageStack / GridSubPage / sevenSplit 等需要"真实比例做同行等高校准"的布局
+   * 会先用这些数值计算 scale & 定位，避免 dims 兜底 aspect=1（正方形假设）导致整体
+   * 布局被等比缩小。
+   *
+   * 数组长度必须与 images[] 一致；缺失的下标仍走"dims[0..n] onLoad 校准 → 兜底 1"链路。
+   * 本字段与 Work.aspectRatio / Work.coverAspectRatio 是同一设计理念（数据写死 →
+   * 不依赖 img natural dims 异步到达）。
+   */
+  imageAspects?: number[];
 };
 
 export type Work = {
@@ -566,6 +578,12 @@ export const workCategories: WorkCategory[] = [
           subPages: [
             {
               layout: "fiveImageStack",
+              // 显式 aspect（width/height）：由 JPEG SOF 真实 natural dims 计算，
+              // 保证首帧渲染（图片 onLoad 未触发 / 缓存命中导致事件丢失时）也能用真实比例算 scale，
+              // 避免正方形假设 1.0 → safeScale≈0.7 导致整幅拼图被等比缩小 30%（刷新坏态）。
+              // 顺序与 images[0..4] 严格一致：LT=part-1(tree), C=part-3(mountain),
+              // LB=part-2(hands), RT=part-4(tower), RB=part-5(cloud)
+              imageAspects: [0.6542, 0.6430, 0.5582, 0.6069, 0.7449],
               images: [
                 {
                   src: `${R2}/images/installations-2026/weishan-memory-ⅱ/part-1.jpg`,
